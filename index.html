@@ -783,7 +783,10 @@ function drawDay(el, d) {
   const y = v => m.t + ph - (Math.min(v, ymax) / ymax) * ph;
   const g = S('g', {}, svg);
   [0, 1000, 2000, 3000].forEach(v => { const yy = y(v); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: v ? 'grid' : 'base' }, g); T(g, m.l - 7, yy + 4, fmt(v), { class: 'tick', 'text-anchor': 'end' }); });
-  [[0.7, '혼잡 70%', 'var(--lv2)'], [0.9, '매우 혼잡 90%', 'var(--lv3)']].forEach(t => { const yy = y(CAP * t[0]); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: 'thr', stroke: t[2] }, g); T(g, m.l + 4, yy - 5, t[1], { class: 'lab' }); });
+  const nowX = (state.sel === TODAY && inRange && NOW.hour >= H0 && NOW.hour <= H1) ? m.l + (NOW.hour - H0 + NOW.min / 60) * bw : null;
+  // threshold labels sit at the left edge, or just right of the 'now' line when that line would cut through them
+  const thrX = (nowX != null && nowX < m.l + 96) ? nowX + 6 : m.l + 4;
+  [[0.7, '혼잡 70%', 'var(--lv2)'], [0.9, '매우 혼잡 90%', 'var(--lv3)']].forEach(t => { const yy = y(CAP * t[0]); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: 'thr', stroke: t[2] }, g); T(g, thrX, yy - 5, t[1], { class: 'lab' }); });
   const bars = [];
   HRS.forEach((h, i) => {
     const v = d.p[h], x0 = xc(i) - barW / 2;
@@ -794,7 +797,6 @@ function drawDay(el, d) {
     if (h % 3 === 0) T(g, xc(i), H - m.b + 17, h + '시', { class: 'tick', 'text-anchor': 'middle' });
   });
   // event start markers (close start times share one label; no label where the 'now' line sits)
-  const nowX = (state.sel === TODAY && inRange && NOW.hour >= H0 && NOW.hour <= H1) ? m.l + (NOW.hour - H0 + NOW.min / 60) * bw : null;
   const xOf = t => m.l + ((toMin(t) / 60) - H0) * bw;
   const starts = [...new Set(d.ev.map(e => e.s))].sort().filter(t => toMin(t) >= H0 * 60 && toMin(t) <= (H1 + 1) * 60);
   const groups = [];
