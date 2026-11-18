@@ -1,0 +1,45 @@
+<form name="frm" id="frm" method="post" action="./parking.do">           
+        <div class="parking_popup">
+
+        <!-- 타이틀 -->
+        <h3 class="title_h1">올림픽공원 주차장 예상 이용률 서비스</h3>
+        <!--// 타이틀 -->
+
+        <!-- 요일 선택, 실시간 주차대수 -->
+        <div class="parking_info"><select name="selectdate" id="selectdate" class="search_type form-select" onchange="fn_change_date()"><option value="2026-11-21" >2026-11-21 (토요일)</option><option value="2026-11-22" >2026-11-22 (일요일)</option></select><h4 class="title_h3">실시간 주차대수(동2문·남2문·북2문): <strong class="point2">1,627 대</strong> 주차 중 / 2,200대 가능</h4>
+        </div>
+        <!-- //요일 선택 -->
+
+        <!-- 공연정보 -->
+        <h4 class="title_h3">공연정보</h4>
+        <div class="table responsive">
+        <tbody id='list_tbody'></tbody>
+            <table>
+                <caption>공연제목, 공연시간, 공연장소, 소요시간에 관한 표입니다.</caption>
+                <colgroup>
+                    <col class="w40">
+                    <col class="w20">
+                    <col class="w25">
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>공연제목</th>
+                        <th>공연시간</th>
+                        <th>공연장소</th>
+                        <th>소요시간(분)</th>
+                    </tr>                
+                <tr>
+						<td>2026-27 로이킴 LIVE TOUR ［R:O:Y］ in SEOUL</td>
+						<td>18:00 ~ 20:00</td>
+					<td>KSPO DOME</td>
+					<td>120</td>																								
+					</tr>
+				</thead>
+                <!-- tbody>
+                    <tr>
+                        <td>산타와 빈양말</td>
+                        <td>14:00~15:00</td>
+                        <td>체조경기장</td>
+                        <td>120분</td>
+                    <
