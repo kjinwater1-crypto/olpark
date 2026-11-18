@@ -18,7 +18,7 @@ def append(name, header, rows):
 
 
 def parse(html):
-    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', html))
+    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', html.replace('&nbsp;', ' ')))
     m = re.search(r'실시간\s*주차\s*대수[^:：]{0,40}[:：]\s*([\d,]+)\s*대\s*주차\s*중\s*/\s*([\d,]+)\s*대', text)
     if not m:
         raise ValueError('live count not found: ' + text[:200])
@@ -35,6 +35,10 @@ if __name__ == '__main__':
         req = urllib.request.Request(URL, headers={'User-Agent': 'Mozilla/5.0 (compatible; olpark-live-log; +https://github.com/kjinwater1-crypto/olpark)'})
         html = urllib.request.urlopen(req, timeout=40).read().decode('utf-8', 'replace')
         n, cap, slots = parse(html)
+        snip = os.path.join(OUT, 'form_snippet.html')     # the date selector of the expected-utilisation table (kept once)
+        if not os.path.exists(snip):
+            i = html.find('<select')
+            open(snip, 'w', encoding='utf-8').write(html[max(0, html.rfind('<form', 0, i)):i + 1500] if i >= 0 else 'no select')
         append('rt_log.csv', ['ts_kst', 'parking_now', 'cap_label'], [[now, n, cap]])
         path, last = os.path.join(OUT, 'official_expect.csv'), {}
         if os.path.exists(path):
