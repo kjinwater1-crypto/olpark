@@ -1,0 +1,15 @@
+{
+ "rule": "live/SCORING.md",
+ "main": "v3",
+ "period": [
+  "2026-11-19",
+  "2026-11-30"
+ ],
+ "hours": [
+  10,
+  22
+ ],
+ "n_days": 0,
+ "days": [],
+ "metrics": {}
+}
