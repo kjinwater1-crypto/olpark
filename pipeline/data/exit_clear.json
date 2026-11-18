@@ -1,0 +1,29 @@
+{
+ "rule": "KSPO DOME 8,000+ (settled), start 15-20 h, north 2, east 2 and south 2 gates; clear = first slot after the peak below 150 exits per 10 min",
+ "weekend": {
+  "n_days": 117,
+  "n_shows": 119,
+  "peak_median": 210.0,
+  "clear_p50": 240.0,
+  "clear_p75": 280.0,
+  "clear_p90": 300.0,
+  "peak10_median": 252.0,
+  "peak10_p90": 302.8,
+  "peak10_max": 327
+ },
+ "weekday": {
+  "n_days": 33,
+  "n_shows": 33,
+  "peak_median": 220.0,
+  "clear_p50": 230.0,
+  "clear_p75": 257.5,
+  "clear_p90": 285.0,
+  "peak10_median": 252.0,
+  "peak10_p90": 291.0,
+  "peak10_max": 311
+ },
+ "running_time": {
+  "n_events": 81,
+  "median": 120.0
+ }
+}

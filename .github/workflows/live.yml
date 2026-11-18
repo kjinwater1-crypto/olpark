@@ -43,6 +43,14 @@ jobs:
             fi
             if [ "$i" -lt "$LOOPS" ]; then sleep 1200; fi
           done
+      - name: 매일 갱신 확인
+        if: github.event_name != 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last=$(gh run list --repo "${{ github.repository }}" --workflow daily.yml --limit 1 --json createdAt --jq '.[0].createdAt' 2>/dev/null || true)
+          t=0; if [ -n "$last" ]; then t=$(date -d "$last" +%s); fi
+          if [ $(( $(date +%s) - t )) -gt 72000 ]; then gh workflow run daily.yml --repo "${{ github.repository }}" --ref main || true; fi
       - name: 다음 기록 예약
         if: github.event_name != 'schedule'
         env:

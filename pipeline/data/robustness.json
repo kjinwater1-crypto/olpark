@@ -1,0 +1,73 @@
+{
+ "same_alarm_days": {
+  "k": 46,
+  "model": 24,
+  "recent4w": 19,
+  "audience": 18,
+  "actual": 24
+ },
+ "lead_days": {
+  "7": {
+   "MAE": 146.3,
+   "hits": 24,
+   "actual": 24,
+   "flagged": 46
+  },
+  "14": {
+   "MAE": 144.4,
+   "hits": 21,
+   "actual": 24,
+   "flagged": 41
+  },
+  "28": {
+   "MAE": 139.0,
+   "hits": 22,
+   "actual": 24,
+   "flagged": 41
+  }
+ },
+ "full_demo": {
+  "MAE": 181.7,
+  "hits": 19,
+  "actual": 24,
+  "flagged": 42,
+  "coverage": 62.5,
+  "growth": 1.154
+ },
+ "bootstrap": {
+  "all_hours": {
+   "vs_recent": [
+    -0.6,
+    9.1,
+    17.4
+   ],
+   "vs_weekday": [
+    24.2,
+    30.7,
+    36.6
+   ]
+  },
+  "daytime": {
+   "vs_recent": [
+    3.8,
+    13.5,
+    22.3
+   ],
+   "vs_weekday": [
+    18.1,
+    25.4,
+    32.3
+   ]
+  }
+ },
+ "peak_bias_by_day": {
+  "weekday_big": {
+   "n": 24,
+   "bias": -212
+  },
+  "weekend_big": {
+   "n": 50,
+   "bias": 206
+  }
+ }
+}

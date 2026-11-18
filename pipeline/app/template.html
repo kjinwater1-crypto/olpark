@@ -1,0 +1,1660 @@
+<title>올팍 주차날씨</title>
+<meta name="description" content="올림픽공원 주차장 혼잡 예보와 분산 안내">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:site_name" content="올팍 주차날씨">
+<meta property="og:title" content="올팍 주차날씨">
+<meta property="og:description" content="올림픽공원 북2, 동2, 남2문 주차장이 언제 붐비는지 공연 일정을 반영해 날짜별로 알려 드립니다. 도착과 출차 시각, 대중교통 권장을 확인하세요.">
+<meta name="theme-color" content="#0a5bab">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%230a5bab'/%3E%3Crect x='5' y='5' width='54' height='54' rx='9' fill='none' stroke='%23fff' stroke-width='3'/%3E%3Cpath d='M24 49V15h11a10.5 10.5 0 0 1 0 21H24' fill='none' stroke='%23fff' stroke-width='7' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: phone-first single column up to 1100px. A sticky header carries the three views; each view opens with a
+   blue road-sign panel (the park's own wayfinding language), followed by working cards and charts. */
+:root{
+  --bg:#f2f5f9; --surface:#ffffff; --surface-2:#eaf0f6;
+  --ink:#0d1a2a; --ink-2:#46566a; --muted:#5b6878; --line:#d9e1ea; --axis:#b9c4d0;
+  --sign:#0a5bab; --sign-ink:#ffffff;
+  --s1:#2a78d6; --s1-wash:rgba(42,120,214,.15); --base:#b8c3cf; --cmp:#8a96a5;
+  /* level colours chosen to stay apart under red-green and blue-yellow colour vision deficiency */
+  --lv0:#3fb8af; --lv1:#f5c400; --lv2:#e8743b; --lv3:#9e1b32;
+  --lv3-text:#9e1b32; --accent-text:#0a5bab;
+  --good-text:#006300; --sun:#c8322f; --sat:#1f5fc0;
+  --shadow:0 6px 20px rgba(13,26,42,.10);
+  --f-display:"Do Hyeon","IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a111b; --surface:#111b28; --surface-2:#172435;
+    --ink:#e6edf5; --ink-2:#a8b5c4; --muted:#8190a2; --line:#223246; --axis:#34475e;
+    --sign:#0b5eb2; --sign-ink:#ffffff;
+    --s1:#4a93ea; --s1-wash:rgba(74,147,234,.22); --base:#3b4b60; --cmp:#7d8a9b;
+    --lv3:#c42d4c; --lv3-text:#ff8a85; --accent-text:#6aa6f2;
+    --good-text:#29b829; --sun:#ef6a66; --sat:#6aa6f2;
+    --shadow:0 6px 20px rgba(0,0,0,.45);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a111b; --surface:#111b28; --surface-2:#172435;
+  --ink:#e6edf5; --ink-2:#a8b5c4; --muted:#8190a2; --line:#223246; --axis:#34475e;
+  --sign:#0b5eb2; --sign-ink:#ffffff;
+  --s1:#4a93ea; --s1-wash:rgba(74,147,234,.22); --base:#3b4b60; --cmp:#7d8a9b;
+  --lv3:#c42d4c; --lv3-text:#ff8a85; --accent-text:#6aa6f2;
+  --good-text:#29b829; --sun:#ef6a66; --sat:#6aa6f2;
+  --shadow:0 6px 20px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{text-wrap:balance}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--s1);outline-offset:2px;border-radius:6px}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);border-bottom:1px solid var(--line)}
+.hrow{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:4px 20px}
+.brand{display:flex;align-items:center;gap:10px;padding-block:12px 6px;min-width:0}
+.pm{flex:none;width:32px;height:32px;border-radius:7px;background:var(--sign);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-size:22px;line-height:1;box-shadow:inset 0 0 0 2px var(--sign),inset 0 0 0 3.5px #fff}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:25px;line-height:1;margin:0;letter-spacing:.01em}
+.brand p{margin:3px 0 0;font-size:12.5px;color:var(--muted);line-height:1.3}
+.tabs{display:flex;gap:2px;margin-bottom:-1px}
+.tab{appearance:none;border:0;background:none;padding:10px 12px 9px;font-weight:600;font-size:14.5px;color:var(--ink-2);border-bottom:3px solid transparent;cursor:pointer;border-radius:6px 6px 0 0}
+.tab:hover{color:var(--ink);background:var(--surface-2)}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--sign)}
+main{padding-block:18px 56px}
+.view{display:grid;gap:16px}
+[hidden]{display:none!important}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.card h2{margin:0;font-size:16.5px;font-weight:700;line-height:1.35}
+.card h3.sub{margin:0 0 6px;font-size:14px;font-weight:700}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;background:var(--ink);color:var(--bg);border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600;box-shadow:var(--shadow);max-width:calc(100vw - 32px)}
+.card .desc{margin:4px 0 12px;color:var(--ink-2);font-size:13.5px;max-width:68ch}
+.card .foot{margin:10px 0 0;color:var(--muted);font-size:12.5px;max-width:80ch}
+.g2{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media (min-width:900px){.g2{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}.g2.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.sec-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* road-sign panel */
+.sign{background:var(--sign);color:var(--sign-ink);border-radius:16px;padding:6px;min-width:0}
+.sign-in{border:2px solid rgba(255,255,255,.92);border-radius:11px;padding:16px 16px 14px;display:grid;gap:12px;height:100%;align-content:start}
+.sign-top{display:flex;gap:12px;align-items:center}
+.sign-top>div:not(.pbig){min-width:0;flex:1}
+.pbig{flex:none;width:48px;height:48px;border-radius:9px;background:#fff;color:var(--sign);display:grid;place-items:center;font-family:var(--f-display);font-size:36px;line-height:1}
+.sign-kicker{font-size:12.5px;font-weight:700;letter-spacing:.04em;opacity:.9;line-height:1.3}
+.sign-date{font-weight:700;font-size:15.5px;line-height:1.3}
+.sign-place{font-size:12.5px;opacity:.86;line-height:1.35}
+.sign-age{font-size:13px;line-height:1.45;margin-top:-4px;padding:5px 9px;border-radius:8px;background:rgba(255,255,255,.12)}
+.pick-note{margin:0;font-size:12.5px;color:var(--muted);line-height:1.4}
+.sign-head{font-family:var(--f-display);font-weight:400;font-size:clamp(32px,7.5vw,44px);line-height:1.05;letter-spacing:.01em;margin:2px 0 0}
+.sign-head span{display:block}
+.sign-head span+span{margin-top:4px}
+.share{flex:none;align-self:flex-start;appearance:none;display:inline-flex;align-items:center;gap:5px;border:1.5px solid rgba(255,255,255,.85);background:transparent;color:#fff;border-radius:999px;padding:5px 11px 5px 9px;font-weight:700;font-size:13px;line-height:1.3;cursor:pointer}
+.share:hover{background:rgba(255,255,255,.14)}
+.share svg{width:15px;height:15px;flex:none}
+.sign :focus-visible{outline-color:#fff}
+.sign-sub{font-size:14.5px;opacity:.94;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.lvchip{display:inline-flex;align-items:center;gap:6px;background:#fff;color:#0d1a2a;border-radius:999px;padding:2px 10px 2px 7px;font-weight:700;font-size:13px;line-height:1.5}
+.lvchip i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.sign-rows{display:grid;border-top:1px solid rgba(255,255,255,.38)}
+.srow{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.2);font-size:14.5px;line-height:1.45}
+.slab{font-size:12.5px;opacity:.82;padding-top:1px;letter-spacing:.02em}
+.srow b{font-weight:700}
+@media (min-width:900px){.sign.wide .sign-rows{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:28px}.sign.wide .sign-in{grid-template-columns:minmax(0,5fr) minmax(0,7fr);column-gap:28px;align-items:start}.sign.wide .sign-top{grid-column:1/-1}}
+.sign-alert{display:flex;gap:9px;align-items:flex-start;background:#fff;color:#0d1a2a;border-radius:9px;padding:9px 12px;font-weight:700;font-size:14.5px;line-height:1.45}
+.sign-alert::before{content:"";flex:none;width:10px;height:10px;border-radius:3px;background:var(--al,var(--lv3));margin-top:6px}
+.meter{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:2px;background:#fff;border-radius:4px;padding:3px}
+.meter span{height:9px;border-radius:2px}
+.meter-ax{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;opacity:.85;margin-top:3px}
+
+/* nearest busy days + day strip */
+.pick{display:grid;gap:4px;min-width:0}
+.near{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px;min-width:0}
+.near-l{font-weight:700;color:var(--ink-2);font-size:13px}
+.near-list{display:flex;flex-wrap:wrap;gap:6px}
+.nchip{appearance:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px 4px 8px;font-weight:600;font-size:13px;line-height:1.35;cursor:pointer;white-space:nowrap}
+.nchip:hover{border-color:var(--axis);background:var(--surface-2)}
+.nchip i{width:9px;height:9px;border-radius:2px;flex:none}
+.nchip b{font-family:var(--f-mono);font-weight:600}
+.nchip[aria-pressed="true"]{border-color:var(--sign);box-shadow:inset 0 0 0 1px var(--sign)}
+.stripbar{display:flex;gap:10px;align-items:stretch;min-width:0}
+.strip{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x proximity;padding:11px 2px 6px;min-width:0;flex:1;scrollbar-width:thin}
+.day{flex:none;width:64px;scroll-snap-align:start;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 4px 6px;text-align:center;cursor:pointer;display:grid;gap:1px;position:relative}
+.day:hover{border-color:var(--axis)}
+.day .dw{font-size:12px;font-weight:600;color:var(--ink-2)}
+.day.sun .dw,.day.sun .dn{color:var(--sun)}
+.day.sat .dw,.day.sat .dn{color:var(--sat)}
+.day .dn{font-family:var(--f-mono);font-size:19px;font-weight:600;line-height:1.15}
+.day .bar{height:5px;border-radius:3px;margin:3px 7px 1px}
+.day .pc{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.day .evm{font-size:11px;color:var(--muted);line-height:1.2;min-height:13px}
+.day.picked{width:74px;border-style:dashed}
+.day.picked .dn{font-size:15.5px;line-height:1.5}
+.day .mo{position:absolute;top:-1px;left:50%;transform:translate(-50%,-55%);background:var(--bg);padding:0 4px;font-size:10.5px;color:var(--muted);font-weight:600;white-space:nowrap}
+.day[aria-pressed="true"]{border:2px solid var(--sign);padding:5px 3px 5px;box-shadow:0 2px 6px rgba(13,26,42,.16)}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-weight:600;font-size:13.5px;cursor:pointer;color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:var(--axis);background:var(--surface-2)}
+.btn[aria-expanded="true"]{border-color:var(--accent-text);color:var(--accent-text)}
+.btn.side{flex:none;display:grid;place-items:center;width:64px;padding:6px;margin-top:9px;margin-bottom:4px;font-size:12.5px;line-height:1.3;text-align:center}
+
+/* calendar */
+.cal-months{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.cal h3{margin:0 0 6px;font-size:14px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.cal-grid .wh{font-size:11.5px;color:var(--muted);text-align:center;padding-bottom:2px}
+.cal-grid .wh.sun{color:var(--sun)} .cal-grid .wh.sat{color:var(--sat)}
+.cd{appearance:none;position:relative;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:3px 2px 4px;display:grid;gap:2px;justify-items:center;cursor:pointer;min-width:0}
+.cd .n{font-family:var(--f-mono);font-size:12.5px;font-weight:600;line-height:1.2}
+.cd.sun .n{color:var(--sun)} .cd.sat .n{color:var(--sat)}
+.cd .b{width:70%;height:4px;border-radius:2px}
+.cd .pc{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-2);line-height:1.1;letter-spacing:-.02em}
+.cd .e{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--ink-2)}
+.cd[aria-pressed="true"]{border:2px solid var(--sign);padding:2px 1px 3px}
+.cd[aria-pressed="true"] .e{top:2px;right:2px}
+.cd.off{visibility:hidden}
+.cd.past{background:var(--surface-2);border-style:dashed}
+.cd.past .n,.cd.past .pc{color:var(--muted)}
+.cd.past .b{opacity:.55}
+.evdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ink-2);margin-right:2px}
+
+/* charts */
+.chart{position:relative;width:100%;min-width:0;outline-offset:4px}
+.chart svg{display:block;overflow:visible}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .base{stroke:var(--axis);stroke-width:1}
+.chart .thr{stroke-width:1.2;stroke-dasharray:5 4}
+.chart .tick{fill:var(--muted);font-family:var(--f-mono);font-size:12px}
+.chart .lab{fill:var(--ink-2);font-family:var(--f-body);font-size:11.5px;font-weight:600}
+.chart .halo{paint-order:stroke;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
+.chart .now{fill:var(--accent-text)}
+.chart .cross{stroke:var(--ink-2);stroke-width:1}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:9px;padding:8px 10px;font-size:12.5px;min-width:136px;z-index:4;line-height:1.45}
+.tip .tt{font-weight:700;margin-bottom:3px;font-size:12.5px}
+.tip .tr{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.tip .tr b{font-family:var(--f-mono);font-weight:600}
+.tip .tl{color:var(--ink-2)}
+.tip .tk{width:14px;height:2.5px;border-radius:2px;flex:none}
+.tip .tk.sq{width:9px;height:9px;border-radius:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2);margin-top:8px}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+.lk{width:16px;height:2.5px;border-radius:2px;display:inline-block}
+.lk.dash{background:none!important;border-top:2px dashed var(--ink-2);height:0}
+.lb{width:16px;height:10px;border-radius:2px;display:inline-block;background:var(--s1-wash);border:1px solid var(--s1)}
+
+/* tables */
+details.tv{margin-top:10px}
+details.tv summary{cursor:pointer;font-size:13.5px;color:var(--ink-2);font-weight:600;width:max-content;max-width:100%;padding:8px 0}
+.tbl{overflow-x:auto;margin-top:8px;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--surface)}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+th.num{font-family:var(--f-body)}
+td.wrap{white-space:normal;min-width:180px}
+td.alc{white-space:normal;min-width:118px}
+td.alc .al{margin:1px 0}
+tr.sel,tr.sel td{background:var(--surface-2)}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface-2)}
+tbody tr.click:focus-visible{outline-offset:-2px}
+.pastm{font-weight:600;font-size:11.5px;color:var(--muted);margin-left:5px}
+.copyb{appearance:none;display:flex;width:max-content;align-items:center;gap:5px;margin-top:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:8px;padding:4px 9px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.copyb:hover{border-color:var(--axis);color:var(--ink)}
+.copyb svg{width:13px;height:13px}
+.badge{display:inline-block;vertical-align:1px;margin-left:2px;border:1px solid var(--axis);border-radius:5px;padding:0 5px;font-size:11.5px;font-weight:600;color:var(--ink-2);line-height:1.5;white-space:nowrap}
+.tbl:focus-visible{outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px}
+.chip i{width:9px;height:9px;border-radius:2px;display:inline-block;flex:none}
+.al{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:12px;border:1.5px solid var(--line);border-radius:999px;padding:1px 9px 1px 7px}
+.al i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.al.tag{border-color:var(--lv3-text);color:var(--lv3-text);padding:1px 8px}
+.ok{color:var(--good-text);font-weight:700}
+
+/* events */
+.evlist{display:grid;gap:0}
+.ev{display:grid;grid-template-columns:62px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev .t{font-family:var(--f-mono);font-size:19px;font-weight:600;line-height:1.2}
+.ev .t.u{color:var(--muted);font-weight:500}
+.ev .t small{display:block;font-family:var(--f-body);font-size:12px;font-weight:600;color:var(--muted);line-height:1.3;margin-top:2px}
+.ev .v{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.ev .n{font-size:14.5px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.ev .a{font-size:12.5px;color:var(--muted)}
+.empty{color:var(--ink-2);font-size:14px;padding:6px 0}
+
+/* stats */
+.stats{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:700px){.stats.s4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;background:var(--surface)}
+.stat .l{font-size:12.5px;color:var(--ink-2);line-height:1.35}
+.stat .v{font-size:23px;font-weight:700;line-height:1.25;margin-top:2px}
+.stat .v small{font-size:13px;font-weight:600;color:var(--ink-2);margin-left:2px}
+.stat .v.time{font-size:19px;white-space:nowrap;letter-spacing:-.01em}
+.stat .d{font-size:12.5px;color:var(--ink-2);margin-top:2px;line-height:1.35}
+.stat .d.good{color:var(--good-text);font-weight:600}
+.kpi .v{font-size:30px}
+
+/* controls */
+.ctrls{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end;margin-bottom:12px}
+.f{display:grid;gap:4px;font-size:12.5px;color:var(--ink-2);font-weight:600;min-width:0}
+.f select{font:inherit;font-size:14px;font-weight:500;padding:7px 30px 7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);max-width:100%}
+.f input[type="range"]{accent-color:var(--sign);width:190px;max-width:100%}
+.f output{font-family:var(--f-mono);font-size:14px;color:var(--ink);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--surface);padding:7px 12px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--sign);color:#fff}
+.seg button:focus-visible{outline:2px solid var(--s1);outline-offset:-4px;border-radius:5px}
+.seg button[aria-pressed="true"]:focus-visible{outline-color:#fff}
+.note{font-size:12.5px;color:var(--muted);margin:8px 0 0;max-width:80ch}
+.card a{color:var(--accent-text);font-weight:600;text-underline-offset:2px}
+.result-line{font-size:15px;margin:0 0 10px;line-height:1.5}
+.result-line b{font-weight:700}
+.result-more{display:grid;gap:4px;margin:-4px 0 12px;font-size:14px;line-height:1.5;color:var(--ink)}
+.result-more .k{display:inline-block;min-width:92px;color:var(--ink-2);font-weight:600;font-size:13px}
+.arrow{color:var(--muted);margin:0 4px}
+
+/* importance bars */
+.hb{display:grid;gap:8px}
+.hb .r{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 46px;gap:10px;align-items:center;font-size:13.5px}
+.hb .track{height:12px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.hb .fill{height:100%;background:var(--s1);border-radius:0 3px 3px 0}
+.hb .pv{font-family:var(--f-mono);font-size:12.5px;text-align:right;color:var(--ink-2)}
+@media (max-width:520px){.hb .r{grid-template-columns:minmax(0,1fr) 46px}.hb .track{grid-column:1/-1;grid-row:2}}
+
+/* heatmap */
+.hm-scroll{overflow-x:auto;padding-bottom:6px}
+.src{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.src li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.src li:last-child{border-bottom:0}
+.src .k{font-weight:600}
+.src .m{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);text-align:right;white-space:nowrap}
+.src .x{grid-column:1/-1;color:var(--ink-2);font-size:12.5px}
+ol.qa{margin:0;padding-left:20px;display:grid;gap:7px;font-size:13.5px;color:var(--ink)}
+ol.qa li::marker{color:var(--muted);font-family:var(--f-mono)}
+footer{color:var(--muted);font-size:12px;padding-block:8px 28px;border-top:1px solid var(--line)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;padding-top:14px}
+.banner{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13.5px;margin-bottom:14px}
+@media (prefers-reduced-motion:no-preference){.day,.cd,.btn,.tab{transition:border-color .15s,background-color .15s,color .15s}}
+/* the two-week table turns into cards below 860px so the action column is never cut off */
+@media (max-width:860px){
+  #opTable table,#opTable tbody,#opTable tr,#opTable td{display:block;width:100%}
+  #opTable thead{display:none}
+  #opTable tr{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+  #opTable td{border:0;padding:3px 0;white-space:normal;text-align:left!important;font-family:var(--f-body);background:none!important}
+  #opTable td[data-label]::before{content:attr(data-label);display:inline-block;min-width:74px;color:var(--muted);font-size:12px;font-weight:600}
+  #opTable td.wrap,#opTable td.alc{min-width:0}
+  #opTable tr.calm{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;padding:6px 10px}
+  #opTable tr.calm td{display:none;width:auto}
+  #opTable tr.calm td:first-child,#opTable tr.calm td.wrap{display:block}
+  #opTable tr.calm td::before{display:none!important}
+  #opTable tr.calm td.wrap{color:var(--muted)}
+  #opTable tr.calm .copyb{display:inline-flex;margin:0 0 0 8px;vertical-align:1px}
+}
+@media (max-width:620px){
+  #live2Table th,#live2Table td{padding:6px 5px;font-size:12.5px}
+}
+@media (max-width:400px){
+  .nchip{font-size:12.5px;padding:3px 8px 3px 7px;gap:5px}
+  .near-list{gap:5px}
+  #dayTable th,#dayTable td{padding:6px 5px}
+  #dayTable th{white-space:normal;vertical-align:bottom}
+}
+@media (max-width:560px){
+  .brand h1{font-size:22px}
+  .tab{padding:9px 9px 8px;font-size:14px}
+  .hrow{align-items:stretch}
+  .tabs{width:100%;justify-content:space-between}
+  .tab{flex:1}
+  .card{padding:14px}
+}
+</style>
+
+<header class="top">
+  <div class="wrap hrow">
+    <div class="brand">
+      <div class="pm" aria-hidden="true">P</div>
+      <div>
+        <h1>올팍 주차날씨</h1>
+        <p>올림픽공원 북2, 동2, 남2문 주차장</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="화면 선택">
+      <button class="tab" role="tab" id="t-visitor" aria-controls="view-visitor" aria-selected="true" tabindex="0" data-view="visitor">방문객</button>
+      <button class="tab" role="tab" id="t-operator" aria-controls="view-operator" aria-selected="false" tabindex="-1" data-view="operator">운영자</button>
+      <button class="tab" role="tab" id="t-model" aria-controls="view-model" aria-selected="false" tabindex="-1" data-view="model">모델과 데이터</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="rangeBanner" class="banner" hidden></div>
+  <div id="srLive" class="sr-only" aria-live="polite"></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <!-- 방문객 -->
+  <section id="view-visitor" class="view" role="tabpanel" aria-labelledby="t-visitor">
+    <div class="pick">
+      <div class="near" id="nearBar" hidden>
+        <span class="near-l" id="nearLabel">가까운 혼잡일</span>
+        <div class="near-list" id="nearList" role="group" aria-labelledby="nearLabel"></div>
+      </div>
+      <div class="stripbar">
+        <div class="strip" id="strip" role="group" aria-label="날짜 선택"></div>
+        <button class="btn side" id="calBtn" aria-expanded="false" aria-controls="calCard">전체<br>달력</button>
+      </div>
+      <p class="pick-note" id="pctNote"></p>
+    </div>
+    <div class="card" id="calCard" hidden>
+      <div class="sec-title"><h2>예보 달력</h2><span class="legend" id="calLegend"></span></div>
+      <p class="desc" id="calDesc">날짜마다 가장 붐비는 시간의 예상 이용률입니다. 날짜를 누르면 그날의 시간대별 예보로 이동하고, Esc 키로 달력을 닫습니다. 점선 칸은 이미 지난 날짜입니다.</p>
+      <div class="cal-months" id="calMonths"></div>
+    </div>
+    <div class="g2">
+      <div class="sign" id="vSign">
+        <div class="sign-in">
+          <div class="sign-top">
+            <div class="pbig" aria-hidden="true">P</div>
+            <div><div class="sign-kicker" id="sgKicker"></div><div class="sign-date" id="sgDate"></div><div class="sign-place">올림픽공원 북2, 동2, 남2문 주차장 합산</div></div>
+            <button type="button" class="share" id="shareBtn" aria-label="이 날짜의 주차날씨 공유"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v8M5 4.3 8 1.5l3 2.8M3.5 7.5v6h9v-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>공유</button>
+          </div>
+          <div class="sign-age" id="sgAge" hidden></div>
+          <div>
+            <h2 class="sign-head" id="sgHead"></h2>
+            <div class="sign-sub" id="sgSub"></div>
+          </div>
+          <div class="sign-alert" id="sgAlert" hidden></div>
+          <div class="sign-rows" id="sgRows"></div>
+          <div>
+            <div class="meter" id="sgMeter" aria-hidden="true"></div>
+            <div class="meter-ax" aria-hidden="true"><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="sec-title"><h2>시간대별 예상 주차 대수</h2></div>
+        <p class="desc" id="dayDesc"></p>
+        <div class="chart" id="dayChart" tabindex="0" aria-label="시간대별 예상 주차 대수 차트"></div>
+        <div class="legend" id="dayLegend"></div>
+        <details class="tv"><summary>표로 보기</summary><div class="tbl" id="dayTable" tabindex="0" role="region" aria-label="시간대별 예상 표"></div></details>
+      </div>
+    </div>
+    <div class="g2 even">
+      <div class="card">
+        <h2>이날 공연</h2>
+        <p class="desc" id="evDesc"></p>
+        <div class="evlist" id="evList"></div>
+      </div>
+      <div class="card" id="exitCard">
+        <h2>공연 끝나고 나갈 때</h2>
+        <div id="exitBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 운영자 -->
+  <section id="view-operator" class="view" role="tabpanel" aria-labelledby="t-operator" hidden>
+    <div class="sign wide">
+        <div class="sign-in">
+          <div class="sign-top">
+            <div class="pbig" aria-hidden="true">P</div>
+            <div><div class="sign-date" id="opDate"></div><div class="sign-place">운영 예보, 2단계 경보</div></div>
+          </div>
+          <div class="sign-age" id="opAge" hidden></div>
+          <div>
+            <h2 class="sign-head" id="opHead"></h2>
+            <div class="sign-sub" id="opSub"></div>
+          </div>
+          <div class="sign-rows" id="opRows"></div>
+        </div>
+    </div>
+      <div class="card">
+        <h2 id="opTitle">2주 운영 예보</h2>
+        <p class="desc" id="opDesc"></p>
+        <div class="tbl" id="opTable" tabindex="0" role="region" aria-labelledby="opTitle"></div>
+      </div>
+
+    <div class="card">
+      <h2>대관 일정 영향 미리보기</h2>
+      <p class="desc" id="wiDesc">대관 신청을 받기 전에, 그 날짜에 공연이 하나 더 열리면 주차장과 출구가 어떻게 변하는지 확인합니다. 2024~2025년 KSPO DOME 관객 8,000명 이상 공연일이 공연 없는 날보다 시간대별로 몇 대 더 붐볐는지를 관객 1,000명당으로 구해, 입력한 관객 수만큼 기존 예보에 더합니다. 시작 6시간 전보다 이른 증가는 2시간에 걸쳐 0으로 줄이고, 아침 7시 전에는 더하지 않으며 9시까지 서서히 늘립니다. 공연장은 기본 관객 수와 같은 공연장의 기존 공연 확인에 쓰입니다.</p>
+      <div class="ctrls">
+        <label class="f">날짜<select id="wiDate"></select></label>
+        <label class="f">공연장<select id="wiVenue">
+          <option value="KSPO">KSPO DOME</option>
+          <option value="HANDBALL">티켓링크 라이브 아레나</option>
+          <option value="OLHALL">올림픽홀</option>
+          <option value="OUTDOOR">88잔디마당 등 야외</option>
+        </select></label>
+        <label class="f">시작 시각<select id="wiStart"></select></label>
+        <label class="f">예상 관객 <output id="wiAudOut"></output><input type="range" id="wiAud" min="500" max="15000" step="500"></label>
+      </div>
+      <p class="result-line" id="wiResult"></p>
+      <div class="result-more" id="wiMore"></div>
+      <div class="chart" id="wiChart" tabindex="0" aria-label="대관 추가 전후 시간대별 주차 대수"></div>
+      <div class="legend">
+        <span class="lg"><span class="sw" style="background:var(--base)"></span>기존 예측</span>
+        <span class="lg"><span class="sw" style="background:var(--s1)"></span>추가 공연의 영향</span>
+        <span class="lg"><span class="lk dash" style="border-top-color:var(--lv2)"></span>혼잡 기준 70%</span>
+        <span class="lg"><span class="lk dash" style="border-top-color:var(--lv3)"></span>매우 혼잡 기준 90%</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>출차 분산 계산</h2>
+      <p class="desc">1단계는 출구 차로 전면 개방, 동2와 북2 방향 차량의 남2문 유도, 출차 시각 안내처럼 비용 없는 운영 조치이고, 2단계는 매장 쿠폰 실험입니다. 공연이 끝나면 출구 세 곳으로 차량이 한꺼번에 몰립니다. 공원 안 카페나 편의점에서 5천 원 이상 결제할 때 차량번호를 등록하면 늦게 나간 1시간 주차 요금을 감면하는 쿠폰으로, 일부 차량의 출차를 늦추면 대기가 얼마나 줄어드는지 계산합니다. 감면은 늦게 나간 1시간 요금만 상쇄하므로 차를 가져올 이유를 늘리지 않고, 이미 차를 가져온 관람객의 출차 시각만 옮깁니다. 늦은 귀가를 막기 위해 18시까지 시작하는 공연에만 적용합니다.</p>
+      <div class="ctrls">
+        <div class="f">상황<div class="seg" id="qPreset" role="group" aria-label="공연 상황"><button type="button" data-v="one" aria-pressed="false">KSPO DOME 한 곳</button><button type="button" data-v="two" aria-pressed="true">두 공연장 동시 종료</button></div></div>
+        <label class="f">공연 관객 <output id="qAudOut"></output><input type="range" id="qAud" min="1000" max="20000" step="10"></label>
+        <label class="f">쿠폰 참여율 <output id="qCpOut"></output><input type="range" id="qCp" min="0" max="50" step="5"></label>
+        <div class="f">출차를 늦추는 시간<div class="seg" id="qDelay" role="group" aria-label="출차를 늦추는 시간">
+          <button type="button" data-v="30" aria-pressed="false">30분</button>
+          <button type="button" data-v="60" aria-pressed="true">60분</button>
+          <button type="button" data-v="90" aria-pressed="false">90분</button>
+        </div></div>
+        <div class="f">요일<div class="seg" id="qDay" role="group" aria-label="요일">
+          <button type="button" data-v="off" aria-pressed="true">주말, 휴일</button>
+          <button type="button" data-v="wk" aria-pressed="false">평일</button>
+        </div></div>
+      </div>
+      <div class="stats s4" id="qStats"></div>
+      <div class="chart" id="qChart" tabindex="0" aria-label="공연 종료 후 출차 대기 차량 수" style="margin-top:12px"></div>
+      <div class="legend">
+        <span class="lg"><span class="lk" style="background:var(--cmp)"></span>쿠폰 없음</span>
+        <span class="lg"><span class="lk" style="background:var(--s1)"></span>쿠폰 적용</span>
+      </div>
+      <p class="note" id="qNote"></p>
+    </div>
+  </section>
+
+  <!-- 모델과 데이터 -->
+  <section id="view-model" class="view" role="tabpanel" aria-labelledby="t-model" hidden>
+    <div class="stats s4" id="kpis"></div>
+    <div class="card">
+      <h2>학습에 쓰지 않은 2025년 7~12월로 검증</h2>
+      <p class="desc">2025년 6월까지의 데이터로 학습한 뒤, 공연 뒤에 확정되는 관객 수와 실제 날씨 대신 대관 신청 인원과 앞선 해 같은 날의 날씨를 비 없이 넣어 이후 179일을 예측하고 하루 최대 주차 대수를 실제와 비교했습니다. 비교 기준은 같은 요일, 같은 시간의 과거 평균을 쓰는 단순 요일 평균과 최근 4주 같은 시간 평균을 그대로 쓰는 최근 4주 평균이고, 그래프에는 단순 요일 평균을 함께 그렸습니다.</p>
+      <div class="chart" id="hoChart" tabindex="0" aria-label="검증 기간 하루 최대 주차 대수, 실제와 예측"></div>
+      <div class="legend">
+        <span class="lg"><span class="lk" style="background:var(--ink)"></span>실제</span>
+        <span class="lg"><span class="lk" style="background:var(--s1)"></span>올팍 주차날씨</span>
+        <span class="lg"><span class="lk" style="background:var(--cmp)"></span>단순 요일 평균</span>
+      </div>
+      <details class="tv"><summary>월별 오차 표로 보기</summary><div class="tbl" id="hoTable" tabindex="0" role="region" aria-label="월별 오차 표"></div></details>
+      <p class="foot" id="demoFoot"></p>
+    </div>
+    <div class="card" id="fieldCard" hidden>
+      <h2>현장 만차 기록과 대조</h2>
+      <p class="desc" id="fieldDesc"></p>
+      <div class="stats" id="fieldStats"></div>
+      <p class="desc" id="fieldZone" style="margin:12px 0 0"></p>
+      <p class="foot" id="fieldSrc"></p>
+    </div>
+    <div class="card" id="live2Card" hidden>
+      <h2>공개해 둔 예보와 실제</h2>
+      <p class="desc" id="live2Desc"></p>
+      <div class="chart" id="live2Chart" tabindex="0" aria-label="공개해 둔 예보와 실시간 주차 대수 비교"></div>
+      <div class="legend">
+        <span class="lg"><span class="sw" style="background:var(--ink);border-radius:50%"></span>실시간 주차 대수, 새벽 기준 보정</span>
+        <span class="lg"><span class="lk" style="background:var(--s1)"></span>공개한 예보</span>
+        <span class="lg"><span class="lb"></span>예측 범위</span>
+      </div>
+      <details class="tv"><summary>표로 보기</summary><div class="tbl" id="live2Table" tabindex="0" role="region" aria-label="공개해 둔 예보와 실제 표"></div></details>
+      <div id="live2Sum"></div>
+      <!-- 650 and 949: /home/claude/ksponco/data/live_baseline_note.json (diff_min 655, typical_20h 949, 2026-11-18 20시 실시간 기록) -->
+      <p class="foot">실시간 주차 대수에는 출차 기록이 없는 장기 주차 차량이 남아 실제보다 많게 표시됩니다. 공연이 없는 11월 18일 수요일 20시 무렵에는 2025년 가을 같은 시각 평균보다 650대 넘게 많았습니다. 실시간 값은 20분마다 자동으로 기록합니다. <a href="https://github.com/kjinwater1-crypto/olpark/blob/main/live/SCORING.md" target="_blank" rel="noopener">채점 규칙</a>, <a href="https://github.com/kjinwater1-crypto/olpark/tree/live" target="_blank" rel="noopener">기록 보기</a></p>
+    </div>
+    <div class="card">
+      <h2>2주 확대: 2025년 11월 3일~16일</h2>
+      <p class="desc"><span>시간대별 실제 주차 대수와 예측, 예측 범위입니다. 주말 공연일의 저녁 정점을 범위가 감싸는지 확인할 수 있습니다.</span> <span class="covSent"></span></p>
+      <div class="chart" id="wkChart" tabindex="0" aria-label="2주간 시간대별 실제와 예측"></div>
+      <div class="legend">
+        <span class="lg"><span class="lk" style="background:var(--ink)"></span>실제</span>
+        <span class="lg"><span class="lk" style="background:var(--s1)"></span>예측</span>
+        <span class="lg"><span class="lb"></span>예측 범위</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>무엇이 예측을 좌우하나</h2>
+      <p class="desc" id="impDesc"></p>
+      <div class="hb" id="impBars"></div>
+    </div>
+    <div class="card">
+      <div class="sec-title"><h2>2024~2025년 하루 최대 주차 대수</h2><span class="legend" id="hmLegend" style="margin-top:0"></span></div>
+      <p class="desc">626만 건의 입출차 기록을 10분 단위로 다시 쌓아 만든 2년치 기록입니다. 빈칸은 원천 파일에 기록이 없는 날입니다.</p>
+      <div class="hm-scroll"><div class="chart" id="hmChart" tabindex="0" aria-label="2년간 일별 최대 주차 대수 달력"></div></div>
+    </div>
+    <div class="g2 even">
+      <div class="card">
+        <h2>사용한 공공데이터</h2>
+        <ul class="src" id="srcList"></ul>
+        <p class="foot">차량 식별값은 여러 파일에 겹쳐 실린 같은 기록을 지우는 데만 썼습니다. 이 서비스에는 10분 단위 합계만 담겨 개별 차량의 방문 이력은 남지 않습니다.</p>
+      </div>
+      <div class="card">
+        <h2>데이터를 다듬으며 찾은 점</h2>
+        <p class="desc">원천 데이터 품질 개선에 바로 쓸 수 있도록 정리했습니다.</p>
+        <ol class="qa">
+          <li>월별 파일 이름과 실제 수록 월이 다른 경우가 있고, 2025년 6월 파일은 5월 파일과 내용이 같습니다.</li>
+          <li>한 파일에서는 2024년 9월 12일 이후와 2025년 7월 기록의 분 자리에 월 숫자가 들어가 있어 시각을 복원할 수 없었습니다.</li>
+          <li>2024년 1월 1~7일과 2월 전체, 2024년 12월 31일, 2025년 7월 31일과 8월 2일, 12월 31일 기록이 없습니다.</li>
+          <li>2024년 9월 12일 주차관제 시스템 교체 뒤 시각 표기 형식이 바뀌고 밤사이 남아 있는 차량이 크게 늘어, 모델에 교체 시점 정보를 넣었습니다.</li>
+          <li>주차장별 면수와 실시간 대수가 함께 공개되면 주차장 단위 안내까지 넓힐 수 있습니다.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap"><span>2026 한국체육산업개발 공공데이터 활용 경진대회 출품작</span><span id="genNote"></span></div></footer>
+
+<script type="application/json" id="appdata">__APP_DATA__</script>
+<script>
+(function () {
+'use strict';
+const A = JSON.parse(document.getElementById('appdata').textContent);
+const CAP = A.cap;
+const NS = 'http://www.w3.org/2000/svg';
+const $ = (s, r) => (r || document).querySelector(s);
+const H0 = 6, H1 = 23;
+const HRS = []; for (let h = H0; h <= H1; h++) HRS.push(h);
+const LV = [
+  { n: '여유', c: 'var(--lv0)' },
+  { n: '보통', c: 'var(--lv1)' },
+  { n: '혼잡', c: 'var(--lv2)' },
+  { n: '매우 혼잡', c: 'var(--lv3)' }
+];
+const lvOf = v => (v < CAP * 0.5 ? 0 : v < CAP * 0.7 ? 1 : v < CAP * 0.9 ? 2 : 3);
+const fmt = n => Math.round(n).toLocaleString('ko-KR');
+const pct = n => Math.min(100, Math.floor((n / CAP) * 100));   // floor keeps the % consistent with the grade thresholds; above capacity reads 100%
+const WD = ['월', '화', '수', '목', '금', '토', '일'];          // data: 0 = Monday
+const WDS = ['일', '월', '화', '수', '목', '금', '토'];         // JS getUTCDay: 0 = Sunday
+const BIG = ['KSPO', 'HANDBALL', 'OLHALL'];
+const VN = { KSPO: 'KSPO DOME', HANDBALL: '티켓링크 라이브 아레나', OLHALL: '올림픽홀', ARTHALL: '우리금융아트홀', MUSE: '뮤즈라이브', OUTDOOR: '88잔디마당 등 야외' };
+const Q = A.queue;
+const SHOW_LEN = Q.show_len_min || 180;     // 공연 길이 가정 (분)
+// KSPO DOME 관객 8,000명 이상 공연일 출구 기록: 세 출구의 10분 출차가 150대 아래로 내려온 시각, 공연 시작 뒤 중앙값과 4일 중 3일 (분)
+// 주말과 휴일은 clear_p50, clear_p75 (clear_n일), 평일은 clear_p50_wk, clear_p75_wk (clear_n_wk일)
+const CLR = wk => (wk && Q.clear_p50_wk ? { p50: Q.clear_p50_wk, p75: Q.clear_p75_wk, n: Q.clear_n_wk, wk: true } : { p50: Q.clear_p50, p75: Q.clear_p75, n: Q.clear_n, wk: false });
+const FIRST_PUB = A.first_pub || '2026-11-15';   // 예보를 처음 공개한 날. 이보다 앞선 날짜는 지난 뒤에 계산한 값
+const PUBLIC = A.view === 'public';              // 공개용 빌드: 운영자 화면을 숨김
+// 공연 일정 원천 레코드 수: app_data에 없어 상수로 둠. 출처 /home/claude/ksponco/data/events_ksponco.json 510건 (2026-11-18 확인)
+const N_EVENTS = A.n_events || 510;
+const r10 = m => Math.round(m / 10) * 10;        // 방문객에게 보이는 출차 시각은 10분 단위
+const TRANSIT = '5호선과 9호선 올림픽공원역, 8호선 몽촌토성역';
+const RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+const hhmm = m => { m = Math.round(m); const h = Math.floor(m / 60) % 24, mm = ((m % 60) + 60) % 60; return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); };
+const cleanTitle = t => t.replace(/\s*[-–]\s*$/, '').trim();
+const ymdParts = s => s.split('-').map(Number);
+const dowSun = s => { const [y, m, d] = ymdParts(s); return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); };
+const dayDiff = (a, b) => { const [y1, m1, d1] = ymdParts(a), [y2, m2, d2] = ymdParts(b); return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 864e5); };
+const dur = m => { m = Math.abs(Math.round(m)); const h = Math.floor(m / 60), r = m % 60; return (h ? h + '시간' : '') + (h && r ? ' ' : '') + (r ? r + '분' : ''); };
+const evTime = e => e.s + (e.u ? '쯤' : '');      // u: 시작 시각 미공개, 요일별 보통 시각을 가정
+
+function kstNow() {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+  const g = t => (parts.find(p => p.type === t) || {}).value;
+  return { date: g('year') + '-' + g('month') + '-' + g('day'), hour: +g('hour'), min: +g('minute') };
+}
+const NOW = kstNow();
+const NOWMIN = NOW.hour * 60 + NOW.min;
+const IDX = {}; A.days.forEach((d, i) => { IDX[d.d] = i; });
+let TODAY = IDX[NOW.date];
+const inRange = TODAY !== undefined;
+const LASTD = A.days[A.days.length - 1].d, ENDED = NOW.date > LASTD;
+const mdText = s => { const [, m, d] = ymdParts(s); return m + '월 ' + d + '일'; };
+if (!inRange) {
+  TODAY = NOW.date < A.days[0].d ? 0 : A.days.length - 1;
+  const b = $('#rangeBanner'); b.hidden = false;
+  b.textContent = NOW.date < A.days[0].d ? '예보는 ' + mdText(A.days[0].d) + '부터 제공됩니다.' : '이 화면의 예보 기간인 ' + mdText(A.days[0].d) + '~' + mdText(LASTD) + '이 지났습니다. 운영 중에는 매일 새벽 새 예보로 갱신됩니다.';
+}
+// a forecast opened more than a week after it was made says so in one small line under the sign's date
+const AGE = dayDiff(A.generated, NOW.date);
+const AGE_NOTE = AGE > 7 && !ENDED ? mdText(A.generated) + ' 예보입니다. 운영 중에는 매일 새벽 새 공연 일정을 반영합니다.' : '';
+['#sgAge', '#opAge'].forEach(s => { const e = $(s); e.hidden = !AGE_NOTE; e.textContent = AGE_NOTE; });
+const state = { sel: TODAY, view: 'visitor', wi: { date: TODAY, venue: 'KSPO', start: 18, aud: null }, q: { aud: null, cp: 20, delay: 60, day: 'off' } };
+let DEF = TODAY;     // default day: set at start-up (after 22:00 the next day, unless today's exit rush is still on)
+
+function dLabel(d, short) {
+  const [, m, dd] = ymdParts(d.d);
+  return short ? m + '/' + dd + ' ' + WD[d.w] : m + '월 ' + dd + '일 ' + WD[d.w] + '요일';
+}
+const isPastD = d => d.d < NOW.date;
+const isRed = d => d.w === 6 || d.h === 1;
+const isWeekendish = d => d.w >= 5 || d.h === 1;
+
+function summ(d) {
+  let pk = -1, pkH = H0;
+  HRS.forEach(h => { if (d.p[h] > pk) { pk = d.p[h]; pkH = h; } });
+  const hiMax = Math.max.apply(null, HRS.map(h => d.hi[h]));
+  const win = (arr, th) => { const hs = HRS.filter(h => arr[h] >= th); return hs.length ? [hs[0], hs[hs.length - 1]] : null; };
+  return { pk, pkH, hiMax, lv: lvOf(pk), hiLv: lvOf(hiMax), w70: win(d.p, CAP * 0.7), w90: win(d.p, CAP * 0.9), h70: win(d.hi, CAP * 0.7), h90: win(d.hi, CAP * 0.9) };
+}
+const span = w => w[0] + '~' + (w[1] + 1) + '시';
+
+/* ---------- exit queue model ---------- */
+function gamma2(t, th) { return t <= 0 ? 0 : (t / (th * th)) * Math.exp(-t / th); }
+function departProfile(T0, T1) {
+  // 나머지의 1/3: 종료 전 30분, BURST: 종료 후 5분부터 감마 분포(정점 13분), 나머지의 2/3: 종료 후 30~120분 고르게
+  const n = T1 - T0 + 1, a = new Float64Array(n), b = new Float64Array(n), c = new Float64Array(n);
+  let sa = 0, sb = 0, sc = 0;
+  for (let i = 0; i < n; i++) {
+    const t = T0 + i;
+    if (t >= -30 && t < 0) a[i] = 1;
+    b[i] = gamma2(t - 5 + 0.5, 8);
+    if (t >= 30 && t < 120) c[i] = 1;
+    sa += a[i]; sb += b[i]; sc += c[i];
+  }
+  const w = new Float64Array(n);
+  const f = BURST, rest = 1 - f;
+  for (let i = 0; i < n; i++) w[i] = rest / 3 * a[i] / sa + f * b[i] / sb + rest * 2 / 3 * c[i] / sc;
+  return w;
+}
+const BURST = Q.burst || 0.7;                // 종료 직후 한꺼번에 몰려 나가는 공연 차량 비율 (나머지는 종료 전과 30분 뒤부터 고르게)
+const T0 = -40, T1 = 220;
+const WPROF = departProfile(T0, T1);
+// one queue at the three exits: demand per minute in, a fixed service rate out (t0 = minute of dem[0] relative to the show end)
+function queueRun(dem, bg, t0) {
+  const n = dem.length, mu = Math.max(1, Q.service_per_min - bg);
+  const q = new Float64Array(n); let Qn = 0, maxQ = 0, iMax = 0, tot = 0;
+  for (let i = 0; i < n; i++) { Qn = Math.max(0, Qn + dem[i] - mu); q[i] = Qn; tot += Qn; if (Qn > maxQ) { maxQ = Qn; iMax = i; } }
+  let clear = null, start = null, last = null;
+  if (maxQ >= 5) { for (let i = iMax; i < n; i++) { if (q[i] < 5) { clear = t0 + i; break; } } }
+  for (let i = 0; i < n; i++) { if (q[i] >= 5) { start = t0 + i; break; } }
+  for (let i = n - 1; i >= 0; i--) { if (q[i] >= 5) { last = i + 1 < n ? t0 + i + 1 : null; break; } }
+  return { q, maxQ, maxWait: maxQ / mu, clear, start, last, tot, mu };
+}
+function simulate(N, bg, cp, delay) {
+  const n = WPROF.length, dem = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    dem[i] += N * (1 - cp) * WPROF[i];
+    if (i + delay < n) dem[i + delay] += N * cp * WPROF[i];
+  }
+  return queueRun(dem, bg, T0);
+}
+const bgOf = d => (isWeekendish(d) ? Q.bg_per_min.off : Q.bg_per_min.wk);
+const isBigEv = e => BIG.includes(e.v) || e.wi;      // wi: a show added in the booking preview (any venue)
+// every show of 1,500+ people leaves around its own end and the three exits serve them as one queue.
+// Shows ending together form one wave whose cars cannot exceed the largest count expected in the lot while they run.
+function dayExit(d) {
+  const big = d.ev.filter(e => isBigEv(e) && e.a >= 1500);
+  if (!big.length) return null;
+  const main = big.reduce((x, y) => (y.a > x.a ? y : x));
+  const end = toMin(main.s) + SHOW_LEN;        // 관객이 가장 많은 공연의 출차가 몰리기 시작하는 때
+  const byEnd = {};
+  big.forEach(e => { const en = toMin(e.s) + SHOW_LEN; (byEnd[en] = byEnd[en] || []).push(e); });
+  const shows = Object.keys(byEnd).map(Number).map(en => {
+    const es = byEnd[en], want = es.reduce((t, e) => t + e.a, 0) * Q.cars_per_1000 / 1000;
+    const h0 = Math.max(H0, Math.min(23, Math.floor(Math.min.apply(null, es.map(e => toMin(e.s))) / 60))), h1 = Math.max(h0, Math.min(23, Math.floor(en / 60)));
+    let cap = 0; for (let h = h0; h <= h1; h++) cap = Math.max(cap, d.p[h]);
+    return { end: en, N: Math.min(want, cap) };
+  });
+  const held = shows.reduce((t, s) => t + s.N, 0);
+  const offs = shows.map(s => s.end - end), o0 = Math.min(0, ...offs), o1 = Math.max(0, ...offs);
+  const dem = new Float64Array(WPROF.length + o1 - o0);
+  shows.forEach((s, k) => { const sh = offs[k] - o0; for (let i = 0; i < WPROF.length; i++) dem[i + sh] += s.N * WPROF[i]; });
+  const r = queueRun(dem, bgOf(d), T0 + o0);
+  r.clear = r.last;                            // when the last queue of the evening has cleared
+  return { main, grp: big, aud: big.reduce((t, e) => t + e.a, 0), end, N: held, r, shows };
+}
+// exit guidance shared by every screen. Days with a show of 8,000+ use the observed clearing times only
+// (weekday or weekend values, rounded to 10 minutes); other days use the queue model.
+function exitInfo(d) {
+  const ex = dayExit(d);
+  if (!ex) return null;
+  const r = ex.r, wk = !isWeekendish(d), C = CLR(wk);
+  const big8 = d.ev.filter(e => isBigEv(e) && e.a >= 8000), obs = big8.length > 0 && !!C.p50;
+  let ref = ex.main, from = null, to = null, late = null, last = null;
+  if (obs) {
+    ref = big8.reduce((x, y) => (y.a > x.a ? y : x));          // 출구 시간의 기준 공연: 그날 가장 큰 공연
+    last = Math.max.apply(null, big8.map(e => toMin(e.s)));
+    from = r10(toMin(ref.s) + SHOW_LEN);
+    to = r10(last + C.p50);
+    late = C.p75 ? r10(last + C.p75) : null;
+    if (late != null && late <= to) late = null;
+  } else if (r.maxQ >= 5 && r.start != null && r.clear != null) {
+    from = r10(ex.end + r.start); to = Math.max(from + 10, r10(ex.end + r.clear));
+  }
+  const has = from != null && to != null;
+  const busy = has && (obs || r.maxWait >= 5);
+  const u = ex.grp.some(e => e.u) || big8.some(e => e.u);
+  return { ex, ref, from, to, late, qTo: obs ? null : to, big8: obs, last, has, busy, u, wk, C, maxWait: r.maxWait, maxQ: r.maxQ };
+}
+const exitSpan = x => hhmm(x.from) + '~' + hhmm(x.to);
+const exitHours = x => { const h0 = Math.floor(x.from / 60), h1 = Math.ceil(x.to / 60); return h0 >= 24 ? '새벽 ' + (h0 - 24) + '~' + (h1 - 24) + '시' : h1 > 24 ? h0 + '시~새벽 ' + (h1 - 24) + '시' : h0 + '~' + h1 + '시'; };
+
+/* ---------- svg + tooltip helpers ---------- */
+function S(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function T(parent, x, y, text, attrs) { const t = S('text', Object.assign({ x: x, y: y }, attrs || {}), parent); t.textContent = text; return t; }
+function box(el, H) {
+  el.replaceChildren();
+  const w = Math.max(260, Math.floor(el.clientWidth || el.parentNode.clientWidth || 600));
+  const svg = S('svg', { width: w, height: H, viewBox: '0 0 ' + w + ' ' + H, role: 'img' }, el);
+  if (el.getAttribute('aria-label')) svg.setAttribute('aria-label', el.getAttribute('aria-label'));
+  const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; el.appendChild(tip);
+  return { svg, tip, w, H };
+}
+function tipShow(tip, title, rows, x, y, w) {
+  tip.replaceChildren();
+  const h = document.createElement('div'); h.className = 'tt'; h.textContent = title; tip.appendChild(h);
+  rows.forEach(r => {
+    const row = document.createElement('div'); row.className = 'tr';
+    if (r.c) { const k = document.createElement('span'); k.className = r.sq ? 'tk sq' : 'tk'; k.style.background = r.c; row.appendChild(k); }
+    const v = document.createElement('b'); v.textContent = r.v; row.appendChild(v);
+    if (r.k) { const l = document.createElement('span'); l.className = 'tl'; l.textContent = r.k; row.appendChild(l); }
+    tip.appendChild(row);
+  });
+  tip.hidden = false;
+  const tw = tip.offsetWidth;
+  let left = x + 14; if (left + tw > w) left = Math.max(0, x - 14 - tw);
+  tip.style.left = left + 'px'; tip.style.top = y + 'px';
+}
+function wireHover(el, svg, tip, n, idxFromX, show, hide) {
+  const hit = svg.querySelector('.hit');
+  const move = e => { const r = svg.getBoundingClientRect(); show(Math.max(0, Math.min(n - 1, idxFromX(e.clientX - r.left)))); };
+  hit.addEventListener('pointermove', move);
+  hit.addEventListener('pointerdown', move);
+  hit.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') hide(); });
+  el.onkeydown = e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const cur = el._hi == null ? (e.key === 'ArrowLeft' ? n : -1) : el._hi;
+    show(Math.max(0, Math.min(n - 1, cur + (e.key === 'ArrowRight' ? 1 : -1))));
+  };
+  el.onblur = hide;
+}
+function roundTopBar(x0, x1, yTop, yBase, r) {
+  r = Math.min(r, (x1 - x0) / 2, Math.max(0, yBase - yTop));
+  return 'M' + x0 + ',' + yBase + 'V' + (yTop + r) + 'Q' + x0 + ',' + yTop + ' ' + (x0 + r) + ',' + yTop + 'H' + (x1 - r) + 'Q' + x1 + ',' + yTop + ' ' + x1 + ',' + (yTop + r) + 'V' + yBase + 'Z';
+}
+function niceMax(v, step) { return Math.ceil(v / step) * step; }
+
+/* generic line chart */
+function lineChart(el, cfg) {
+  const { svg, tip, w, H } = box(el, cfg.H || 240);
+  const m = Object.assign({ l: 48, r: 14, t: 14, b: 28 }, cfg.m || {});
+  const n = cfg.n, pw = w - m.l - m.r, ph = H - m.t - m.b;
+  const x = i => m.l + (n <= 1 ? pw / 2 : (i * pw) / (n - 1));
+  const y0 = cfg.ymin || 0;
+  const y = v => m.t + ph - (Math.max(0, Math.min(v - y0, cfg.ymax - y0)) / (cfg.ymax - y0)) * ph;
+  const g = S('g', {}, svg);
+  cfg.yticks.forEach(v => { const yy = y(v); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: v === y0 ? 'base' : 'grid' }, g); T(g, m.l - 7, yy + 4, cfg.yfmt(v), { class: 'tick', 'text-anchor': 'end' }); });
+  (cfg.thr || []).forEach(t => { const yy = y(t.v); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: 'thr', stroke: t.c }, g); });
+  if (cfg.band) {
+    let d = '';
+    for (let i = 0; i < n; i++) d += (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(cfg.band.hi[i]).toFixed(1);
+    for (let i = n - 1; i >= 0; i--) d += 'L' + x(i).toFixed(1) + ',' + y(cfg.band.lo[i]).toFixed(1);
+    S('path', { d: d + 'Z', fill: 'var(--s1-wash)', stroke: 'none' }, g);
+  }
+  (cfg.xgrid || []).forEach(i => S('line', { x1: x(i), x2: x(i), y1: m.t, y2: H - m.b, class: 'grid' }, g));
+  cfg.series.forEach(s => {
+    let d = '', pen = false;
+    for (let i = 0; i < n; i++) {
+      const v = s.vals[i];
+      if (v == null) { pen = false; continue; }
+      if (s.step && pen) d += 'H' + x(i).toFixed(1) + 'V' + y(v).toFixed(1);
+      else d += (pen ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1);
+      pen = true;
+    }
+    S('path', { d: d, fill: 'none', stroke: s.c, 'stroke-width': s.w || 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity: s.o || 1 }, g);
+  });
+  (cfg.dots || []).forEach(p => S('circle', { cx: x(p.i), cy: y(p.v), r: p.r || 4, fill: p.c, stroke: 'var(--surface)', 'stroke-width': 1.5, opacity: p.o == null ? 1 : p.o }, g));
+  // threshold names go on top of the lines, with a halo, so a series never hides them
+  (cfg.thr || []).forEach(t => T(g, w - m.r - 2, y(t.v) - 5, t.label, { class: 'lab halo', 'text-anchor': 'end' }));
+  cfg.xticks.forEach(t => { S('line', { x1: x(t[0]), x2: x(t[0]), y1: H - m.b, y2: H - m.b + 4, class: 'base' }, g); T(g, x(t[0]), H - m.b + 17, t[1], { class: 'tick', 'text-anchor': t[2] || 'middle' }); });
+  const cross = S('line', { y1: m.t, y2: H - m.b, class: 'cross', visibility: 'hidden' }, svg);
+  const dots = cfg.series.map(s => S('circle', { r: 4, fill: s.c, stroke: 'var(--surface)', 'stroke-width': 2, visibility: 'hidden' }, svg));
+  S('rect', { class: 'hit', x: m.l - 6, y: m.t, width: pw + 12, height: ph, fill: 'transparent' }, svg);
+  const show = i => {
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+    cfg.series.forEach((s, k) => { const v = s.vals[i]; if (v == null) { dots[k].setAttribute('visibility', 'hidden'); return; } dots[k].setAttribute('cx', x(i)); dots[k].setAttribute('cy', y(v)); dots[k].setAttribute('visibility', 'visible'); });
+    tipShow(tip, cfg.tipTitle(i), cfg.tipRows(i), x(i), m.t, w); el._hi = i;
+  };
+  const hide = () => { cross.setAttribute('visibility', 'hidden'); dots.forEach(d => d.setAttribute('visibility', 'hidden')); tip.hidden = true; el._hi = null; };
+  wireHover(el, svg, tip, n, px => Math.round(((px - m.l) / pw) * (n - 1)), show, hide);
+}
+
+/* ---------- 방문객 ---------- */
+function announce(text) { const el = $('#srLive'); el.textContent = ''; setTimeout(() => { el.textContent = text; }, 60); }
+function toast(text) { const t = $('#toast'); t.textContent = text; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 2600); }
+function annText(i) {
+  const d = A.days[i], s = summ(d), hp = headParts(s, exitInfo(d), d);
+  return dLabel(d) + ', ' + hp.main + (hp.exit ? ', ' + hp.exit : '') + ', 기준 수용량의 최대 ' + pct(s.pk) + '%';
+}
+// choose a day on the visitor screen (date strip, calendar, nearest busy days) and keep the address in step
+function selectDay(i, focus) {
+  state.sel = i;
+  renderVisitor();
+  syncHash();
+  announce(annText(i));
+  const strip = () => { const b = $('#strip [aria-pressed="true"]'); if (b) b.focus({ preventScroll: true }); };
+  if (focus === 'strip') strip();
+  else if (focus === 'near') { const b = $('#nearList [data-i="' + i + '"]'); if (b) b.focus({ preventScroll: true }); else strip(); }
+}
+function nearDays() {
+  if (ENDED) return { list: [], kind: '' };
+  let from = inRange ? TODAY : 0;
+  if (inRange) { const w = summ(A.days[TODAY]).h70; if (w && NOW.hour > w[1]) from = TODAY + 1; }
+  // warning days first; when there are fewer than three, the nearest caution days fill the row (each chip names its own level)
+  const warn = [], caution = [];
+  for (let i = from; i < A.days.length && (warn.length < 3 || caution.length < 3); i++) { const s = summ(A.days[i]); if (s.lv >= 2) { if (warn.length < 3) warn.push(i); } else if (s.hiLv >= 2 && caution.length < 3) caution.push(i); }
+  const list = warn.concat(caution.slice(0, 3 - warn.length)).sort((a, b) => a - b);
+  return { list, kind: warn.length ? '가까운 혼잡일' : '가까운 혼잡 주의일' };
+}
+function renderNear() {
+  const { list, kind } = nearDays(), bar = $('#nearBar');
+  bar.hidden = !list.length;
+  if (!list.length) return;
+  $('#nearLabel').textContent = kind;
+  const box = $('#nearList'); box.replaceChildren();
+  list.forEach(i => {
+    const d = A.days[i], s = summ(d), warnDay = s.lv >= 2, w = s.w90 || s.w70;
+    const what = warnDay ? span(w) + ' ' + LV[s.w90 ? 3 : 2].n : '혼잡 주의';      // '16~18시 혼잡' on warning days, '혼잡 주의' otherwise
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'nchip'; b.dataset.i = i;
+    b.setAttribute('aria-pressed', i === state.sel ? 'true' : 'false');
+    b.setAttribute('aria-label', dLabel(d) + (inRange && i === TODAY ? ', 오늘' : '') + ', ' + what);
+    const sw = document.createElement('i'); sw.style.background = LV[warnDay ? s.lv : 1].c; b.appendChild(sw);
+    b.appendChild(document.createTextNode(dLabel(d, true) + ' '));
+    if (warnDay) { const v = document.createElement('b'); v.textContent = span(w); b.appendChild(v); b.appendChild(document.createTextNode(' ' + LV[s.w90 ? 3 : 2].n)); }
+    else b.appendChild(document.createTextNode('혼잡 주의'));
+    b.onclick = () => selectDay(i, 'near');
+    box.appendChild(b);
+  });
+}
+function renderStrip() {
+  const st = $('#strip'); st.replaceChildren();
+  const from = TODAY, to = Math.min(A.days.length, from + 28);
+  const mk = (i, label, picked) => {
+    const d = A.days[i], s = summ(d), [, mo, dd] = ymdParts(d.d);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'day' + (isRed(d) ? ' sun' : d.w === 5 ? ' sat' : '') + (picked ? ' picked' : '');
+    b.setAttribute('aria-pressed', i === state.sel ? 'true' : 'false');
+    b.setAttribute('aria-label', dLabel(d) + (label === '오늘' || label === '내일' || label === '지난 날' ? ', ' + label : '') + ', 최대 ' + pct(s.pk) + '% ' + LV[s.lv].n + (d.ev.length ? ', 공연 ' + d.ev.length + '건' : ''));
+    const add = (cls, txt) => { const e = document.createElement('span'); e.className = cls; e.textContent = txt; b.appendChild(e); return e; };
+    add('dw', label);
+    add('dn', picked ? mo + '/' + dd : String(dd));
+    const bar = add('bar', ''); bar.style.background = LV[s.lv].c;
+    add('pc', pct(s.pk) + '%');
+    add('evm', d.ev.length ? '공연 ' + d.ev.length : '');
+    b.onclick = () => selectDay(i, 'strip');
+    return b;
+  };
+  if (state.sel < from || state.sel >= to) st.appendChild(mk(state.sel, isPastD(A.days[state.sel]) ? '지난 날' : '선택', true));
+  let lastM = null;
+  for (let i = from; i < to; i++) {
+    const d = A.days[i], mo = ymdParts(d.d)[1];
+    const lab = inRange && i === TODAY ? '오늘' : inRange && i === TODAY + 1 ? '내일' : isPastD(d) ? '지난 날' : WD[d.w];
+    const b = mk(i, lab, false);
+    if (mo !== lastM && i !== from) { const mm = document.createElement('span'); mm.className = 'mo'; mm.textContent = mo + '월'; b.prepend(mm); }
+    lastM = mo;
+    st.appendChild(b);
+  }
+  const selBtn = st.querySelector('[aria-pressed="true"]');
+  if (selBtn && selBtn.scrollIntoView && (st._init || state.sel !== TODAY)) selBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  st._init = true;
+}
+function legendLevels(el, withEvent, withDot) {
+  el.replaceChildren();
+  LV.forEach((l, k) => {
+    const s = document.createElement('span'); s.className = 'lg';
+    const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = l.c; s.appendChild(sw);
+    s.appendChild(document.createTextNode(l.n + ' ' + ['50% 미만', '50~70%', '70~90%', '90% 이상'][k]));
+    el.appendChild(s);
+  });
+  if (withEvent) { const s = document.createElement('span'); s.className = 'lg'; const t = document.createElement('span'); t.textContent = '▼'; t.style.color = 'var(--ink-2)'; t.style.fontSize = '11px'; s.appendChild(t); s.appendChild(document.createTextNode('공연 시작')); el.appendChild(s); }
+  if (withDot) { const s = document.createElement('span'); s.className = 'lg'; const t = document.createElement('span'); t.className = 'evdot'; s.appendChild(t); s.appendChild(document.createTextNode('공연 있는 날')); el.appendChild(s); }
+}
+function setRows(el, rows) {
+  el.replaceChildren();
+  rows.forEach(r => {
+    const row = document.createElement('div'); row.className = 'srow';
+    const a = document.createElement('span'); a.className = 'slab'; a.textContent = r[0];
+    const b = document.createElement('span');
+    if (r[2]) { const bb = document.createElement('b'); bb.textContent = r[1]; b.appendChild(bb); if (r[2] !== true) b.appendChild(document.createTextNode(' ' + r[2])); }
+    else b.textContent = r[1];
+    row.appendChild(a); row.appendChild(b); el.appendChild(row);
+  });
+}
+function lvChip(k) { const c = document.createElement('span'); c.className = 'lvchip'; const i = document.createElement('i'); i.style.background = LV[k].c; c.appendChild(i); c.appendChild(document.createTextNode(LV[k].n)); return c; }
+
+// headline: '매우 혼잡' only for hours at 90% or more; on days when parking is easy but the exits are not, the exit rush gets a line of the same size
+function headParts(s, x, d) {
+  if (d && x && x.big8 && x.has && x.wk && s.lv <= 1) return { main: exitHours(x) + ' 출구 혼잡', exit: null, park: '주차는 ' + LV[s.lv].n + ' 예상', wkBig: true };
+  let main;
+  if (s.w90) main = span(s.w90) + ' 매우 혼잡';
+  else if (s.w70) main = span(s.w70) + ' 혼잡';
+  else if (s.h70) main = span(s.h70) + ' 혼잡 주의';
+  else if (s.lv === 1) main = '대체로 원활';
+  else main = '종일 여유';
+  const exit = !s.w70 && !s.h70 && x && x.busy ? exitHours(x) + ' 출구 혼잡' : null;
+  return { main, exit };
+}
+function renderSign(d, s, x) {
+  const i = state.sel, isToday = inRange && i === TODAY, isTmr = inRange && i === TODAY + 1, isPast = isPastD(d);
+  $('#sgKicker').textContent = isToday ? '오늘의 주차날씨' : isTmr ? '내일의 주차날씨' : isPast ? (d.d < FIRST_PUB ? '지난 날짜, 사후 계산' : '지난 날짜, 당시 예보') : '주차날씨 예보';
+  $('#sgDate').textContent = dLabel(d) + (d.h ? ', 공휴일' : '');
+  const hp = headParts(s, x, d), head = $('#sgHead'); head.replaceChildren();
+  [hp.main, hp.exit].forEach(t => { if (!t) return; const e = document.createElement('span'); e.textContent = t; head.appendChild(e); });
+  const sub = $('#sgSub'); sub.replaceChildren(lvChip(s.lv));
+  let st = (hp.park ? hp.park + ', ' : '') + (s.w90 ? span(s.w70) + ' 혼잡, ' : '') + '최대 ' + fmt(s.pk) + '대, 기준 ' + fmt(CAP) + '대의 ' + pct(s.pk) + '% (' + s.pkH + '시 전후)';
+  if (s.hiLv > s.lv) st += s.hiMax >= CAP ? ', 많으면 만차' : ', 많으면 ' + fmt(s.hiMax) + '대까지';
+  sub.appendChild(document.createTextNode(st));
+  const al = $('#sgAlert');
+  const warn = s.lv >= 2, caution = !warn && s.hiLv >= 2;
+  const win = s.h70;                                         // hours that may be busy: the range upper bound passes 70%
+  const pastBusy = isToday && win && NOW.hour > win[1];
+  const exitAhead = x && x.busy && !(isToday && NOWMIN > (x.late || x.to));
+  al.hidden = true;
+  if (!isPast && (warn || caution) && !pastBusy) {
+    al.hidden = false; al.style.setProperty('--al', warn ? LV[s.lv].c : LV[1].c);
+    al.textContent = '대중교통을 권해요. ' + (exitAhead ? '차로 오면 공연이 끝난 뒤 ' + hhmm(x.to) + (x.late ? ', 늦으면 ' + hhmm(x.late) : '') + '까지 출구가 붐빌 수 있어요.' : warn ? '이날은 주차장이 일찍 찹니다.' : '이날은 주차장이 붐빌 수 있어요.');
+  } else if (!isPast && exitAhead) {
+    al.hidden = false; al.style.setProperty('--al', LV[2].c);
+    const lead = pastBusy ? '주차 혼잡 시간은 지났어요. ' : '주차는 여유로운 편이에요. ';
+    if (isToday && NOWMIN >= x.from) al.textContent = lead + (NOWMIN < x.to ? '지금 출구가 붐벼요. 보통 ' + hhmm(x.to) + (x.late ? ', 늦으면 ' + hhmm(x.late) : '') + ' 이후 원활해요.' : '출구는 늦으면 ' + hhmm(x.late) + '까지 붐빌 수 있어요.');
+    else al.textContent = lead + '다만 공연이 끝난 뒤 ' + exitSpan(x) + '에는 출구가 붐벼요' + (x.late ? '. 늦으면 ' + hhmm(x.late) + '까지 붐빌 수 있어요.' : '.');
+  }
+  if (!al.hidden && x && x.u) al.textContent += ' 공연 시작 시각이 정해지면 바뀔 수 있어요.';
+  const rows = [];
+  if (isToday && NOW.hour >= H0 && NOW.hour <= H1) { const v = d.p[NOW.hour]; rows.push(['지금', fmt(v) + '대 예상', pct(v) + '% ' + LV[lvOf(v)].n]); }
+  if (isPast) rows.push(['도착', win ? win[0] + '시 전' : '시간 제약 없음', win ? '예보로 본 도착 권장 시각이에요' : '예보로는 주차가 여유로운 날이었어요']);
+  else if (hp.wkBig) rows.push(isToday && NOWMIN >= toMin(x.ref.s) ? ['도착', '공연 시작 뒤', '주차 자리는 여유 있는 편이에요'] : ['도착', '공연 2시간 전까지', '오면 수월해요']);
+  else if (isToday && win && NOW.hour > win[1]) rows.push(['도착', '혼잡 시간 지남', '지금은 여유 있게 주차할 수 있어요']);
+  else if (isToday && win && NOW.hour >= win[0] && s.w70 && NOW.hour < s.w70[0]) rows.push(['도착', s.w70[0] + '시 전', '늦어도 이때까지 오세요. 지금도 붐빌 수 있어요']);
+  else if (isToday && win && NOW.hour >= win[0]) {
+    const after = HRS.find(h => h > win[1] && lvOf(d.p[h]) === 0);
+    const tail = after === win[1] + 1 ? after + '시 이후 다시 여유' : after != null ? (win[1] + 1) + '시부터 혼잡이 풀리고 ' + after + '시 이후 여유' : (win[1] + 1) + '시부터 혼잡이 풀려요';
+    rows.push(['도착', s.w70 && NOW.hour >= s.w70[0] && NOW.hour <= s.w70[1] ? '지금은 혼잡 시간' : '지금은 붐빌 수 있는 시간', tail]);
+  }
+  else if (win) rows.push(['도착', win[0] + '시 전', warn ? '차로 온다면 이때까지 와야 자리 찾기가 수월해요' : '도착을 권해요. 많으면 이때부터 붐벼요']);
+  else rows.push(['도착', '시간 제약 없음', x && x.busy ? '주차는 언제 와도 할 수 있어요' : '언제 와도 주차할 수 있어요']);
+  if (x && x.big8 && x.has) rows.push(['출차', (x.late ? '보통 ' + hhmm(x.to) + ', 늦으면 ' + hhmm(x.late) : hhmm(x.to)) + ' 이후', '원활해요. 남2문이 덜 붐벼요']);
+  else if (x && x.qTo != null) rows.push(['출차', hhmm(x.qTo) + ' 이후', '나가면 줄 서지 않아요. 남2문이 덜 붐벼요']);
+  else if (x) rows.push(['출차', '종료 직후에도 원활', true]);
+  else rows.push(['출차', '출차 집중 없음', true]);
+  rows.push(['대중교통', (warn || caution) ? '권장' : '이용 가능', TRANSIT]);
+  // near zones fill first: the first hour whose range upper bound passes the total count at which operators logged zones full
+  const Z = A.fieldcheck && A.fieldcheck.zone_full_occ_median, zh = Z ? HRS.find(h => d.hi[h] > Z) : undefined;
+  if (zh != null && !isPast) rows.push(['참고', '공연장 가까운 주차구역은 ' + zh + '시쯤부터 찰 수 있어요.' + (isToday && NOW.hour >= zh ? '' : ' 걷기 어려운 분과 함께라면 이보다 먼저 오세요.')]);
+  if (!isPast && !d.ev.length && A.sched_horizon && d.d > A.sched_horizon) rows.push(['공연 일정', '등록 전', '공연이 등록되면 예보가 바뀝니다']);
+  setRows($('#sgRows'), rows);
+  const mt = $('#sgMeter'); mt.replaceChildren();
+  HRS.forEach(h => { const sp = document.createElement('span'); sp.style.background = LV[lvOf(d.p[h])].c; sp.title = h + '시 ' + pct(d.p[h]) + '%'; mt.appendChild(sp); });
+}
+
+function drawDay(el, d) {
+  const { svg, tip, w, H } = box(el, 280);
+  const m = { l: 46, r: 14, t: 44, b: 28 };
+  const maxHi = Math.max.apply(null, HRS.map(h => d.hi[h]));
+  const ymax = Math.max(CAP, niceMax(maxHi, 200));
+  const pw = w - m.l - m.r, ph = H - m.t - m.b, n = HRS.length, bw = pw / n, barW = Math.max(6, Math.min(24, bw - 5));
+  const xc = i => m.l + i * bw + bw / 2;
+  const y = v => m.t + ph - (Math.min(v, ymax) / ymax) * ph;
+  const g = S('g', {}, svg);
+  [0, 1000, 2000, 3000].forEach(v => { const yy = y(v); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: v ? 'grid' : 'base' }, g); T(g, m.l - 7, yy + 4, fmt(v), { class: 'tick', 'text-anchor': 'end' }); });
+  const nowX = (state.sel === TODAY && inRange && NOW.hour >= H0 && NOW.hour <= H1) ? m.l + (NOW.hour - H0 + NOW.min / 60) * bw : null;
+  // threshold labels sit at the left edge, or just right of the 'now' line when that line would cut through them
+  const thrX = (nowX != null && nowX < m.l + 96) ? nowX + 6 : m.l + 4;
+  const thr = [[0.7, '혼잡 70%', 'var(--lv2)'], [0.9, '매우 혼잡 90%', 'var(--lv3)']];
+  thr.forEach(t => { const yy = y(CAP * t[0]); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: 'thr', stroke: t[2] }, g); });
+  const bars = [];
+  HRS.forEach((h, i) => {
+    const v = d.p[h], x0 = xc(i) - barW / 2;
+    const p = S('path', { d: roundTopBar(x0, x0 + barW, y(v), y(0), 4), fill: LV[lvOf(v)].c }, g);
+    bars.push(p);
+    S('line', { x1: xc(i), x2: xc(i), y1: y(d.lo[h]), y2: y(d.hi[h]), stroke: 'var(--ink)', 'stroke-width': 1.5, opacity: 0.55 }, g);
+    S('line', { x1: xc(i) - 3.5, x2: xc(i) + 3.5, y1: y(d.hi[h]), y2: y(d.hi[h]), stroke: 'var(--ink)', 'stroke-width': 1.5, opacity: 0.55 }, g);
+    if (h % 3 === 0) T(g, xc(i), H - m.b + 17, h + '시', { class: 'tick', 'text-anchor': 'middle' });
+  });
+  thr.forEach(t => T(g, thrX, y(CAP * t[0]) - 5, t[1], { class: 'lab halo' }));
+  // event start markers: labels on the top row, triangles below them, the 'now' label on its own row, so nothing has to be hidden
+  const xOf = t => m.l + ((toMin(t) / 60) - H0) * bw;
+  const uSet = new Set(d.ev.filter(e => e.u).map(e => e.s));
+  const starts = [...new Set(d.ev.map(e => e.s))].sort().filter(t => toMin(t) >= H0 * 60 && toMin(t) <= (H1 + 1) * 60);
+  const groups = [];
+  starts.forEach(t => { const x = xOf(t), g0 = groups[groups.length - 1]; if (g0 && x - g0.x1 < 46) { g0.t.push(t); g0.x1 = x; } else groups.push({ x0: x, x1: x, t: [t] }); });
+  groups.forEach(gr => {
+    gr.t.forEach(t => { const x = xOf(t), o = uSet.has(t) ? 0.55 : 1; S('path', { d: 'M' + (x - 4.5) + ',' + (m.t - 24) + 'h9l-4.5,6z', fill: 'var(--ink-2)', opacity: o }, g); S('line', { x1: x, x2: x, y1: m.t - 18, y2: H - m.b, stroke: 'var(--ink-2)', 'stroke-width': 1, opacity: 0.35 * o }, g); });
+    const label = gr.t.map(t => t + (uSet.has(t) ? '쯤' : '')).join(', ');
+    const half = label.length * 3.7 + 2, cx = Math.min(Math.max((gr.x0 + gr.x1) / 2, m.l + half), w - m.r - half);
+    T(g, cx, m.t - 30, label, { class: 'tick', 'text-anchor': 'middle' });
+  });
+  if (nowX != null) {
+    S('line', { x1: nowX, x2: nowX, y1: m.t - 3, y2: H - m.b, stroke: 'var(--s1)', 'stroke-width': 2 }, g);
+    const left = nowX - m.l > 34;
+    T(g, left ? nowX - 5 : nowX + 5, m.t - 6, '지금', { class: 'lab now', 'text-anchor': left ? 'end' : 'start' });
+  }
+  S('rect', { class: 'hit', x: m.l, y: m.t - 14, width: pw, height: ph + 14, fill: 'transparent' }, svg);
+  const show = i => {
+    bars.forEach((b, k) => b.setAttribute('opacity', k === i ? 1 : 0.55));
+    const h = HRS[i], v = d.p[h];
+    tipShow(tip, h + '시', [
+      { v: fmt(v) + '대', k: pct(v) + '% ' + LV[lvOf(v)].n, c: LV[lvOf(v)].c, sq: true },
+      { v: fmt(d.lo[h]) + '~' + fmt(d.hi[h]) + '대', k: '예측 범위' }
+    ], xc(i), m.t, w);
+    el._hi = i;
+  };
+  const hide = () => { bars.forEach(b => b.setAttribute('opacity', 1)); tip.hidden = true; el._hi = null; };
+  wireHover(el, svg, tip, n, px => Math.floor((px - m.l) / bw), show, hide);
+}
+function renderDayTable(d) {
+  const rows = HRS.map(h => '<tr><td>' + h + '시</td><td class="num">' + fmt(d.p[h]) + '</td><td class="num">' + pct(d.p[h]) + '%</td><td class="num">' + fmt(d.lo[h]) + '~' + fmt(d.hi[h]) + '</td><td>' + LV[lvOf(d.p[h])].n + '</td></tr>').join('');
+  $('#dayTable').innerHTML = '<table><thead><tr><th>시간</th><th class="num">예상 대수</th><th class="num">이용률</th><th class="num">예측 범위</th><th>등급</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+function renderEvents(d) {
+  const el = $('#evList'); el.replaceChildren();
+  const ar = A.insights && A.insights.arrival, desc = $('#evDesc');
+  desc.hidden = !(ar && ar.r50 && d.ev.some(e => BIG.includes(e.v)));
+  if (!desc.hidden) desc.textContent = '대형 공연 차량의 절반은 시작 ' + dur(ar.r50 + 10) + ' 전까지 도착하고' + (ar.t90 ? ', 시작 ' + dur(ar.t90 + 10) + ' 전이면 주차장이 그날 최대치의 90%에 이릅니다.' : '니다.');   // 10분 구간의 시작 기준 값이라 구간 끝으로 맞춤
+  if (!d.ev.length) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = '등록된 공연이 없는 날입니다. 공원 이용객 중심으로 낮 시간에 완만하게 붐빕니다.'; el.appendChild(p); return; }
+  d.ev.slice().sort((a, b) => toMin(a.s) - toMin(b.s)).forEach(e => {
+    const r = document.createElement('div'); r.className = 'ev';
+    const t = document.createElement('div'); t.className = 't' + (e.u ? ' u' : ''); t.textContent = evTime(e);
+    if (e.u) { const sm = document.createElement('small'); sm.textContent = '시간 미정'; t.appendChild(sm); }
+    const c = document.createElement('div');
+    const v = document.createElement('div'); v.className = 'v'; v.textContent = VN[e.v] || e.vn;
+    const n = document.createElement('div'); n.className = 'n'; n.textContent = cleanTitle(e.t);
+    if (e.m) { const bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = '발표 기준'; bd.title = '공식 공연정보에 아직 없어 주최 측 발표로 넣은 공연'; n.appendChild(document.createTextNode(' ')); n.appendChild(bd); }
+    const a = document.createElement('div'); a.className = 'a'; a.textContent = e.a ? '예상 관객 약 ' + fmt(Math.round(e.a / 100) * 100) + '명' + (e.n > 1 ? ', 하루 ' + e.n + '회' : '') : '';
+    c.appendChild(v); c.appendChild(n); if (e.a) c.appendChild(a);
+    r.appendChild(t); r.appendChild(c); el.appendChild(r);
+  });
+}
+function renderExit(d, x) {
+  const el = $('#exitBody'); el.replaceChildren();
+  const p = (txt, cls) => { const e = document.createElement('p'); e.className = cls || 'desc'; e.textContent = txt; el.appendChild(e); return e; };
+  if (!x) { p('이날은 대형 공연이 없어 출차가 한꺼번에 몰리지 않습니다. 출구 세 곳은 10분에 약 ' + fmt(Math.round(Q.service_per_min) * 10) + '대를 내보냅니다.'); return; }
+  const ex = x.ex, rs = toMin(x.ref.s), byT = (a, b) => toMin(a.s) - toMin(b.s), nm = e => (VN[e.v] || e.vn) + ' ' + evTime(e);
+  // shows starting within 30 minutes of the reference show are named together; the others get their own sentence
+  const same = ex.grp.filter(e => Math.abs(toMin(e.s) - rs) <= 30).sort(byT), others = ex.grp.filter(e => Math.abs(toMin(e.s) - rs) > 30).sort(byT);
+  p(same.map(nm).join(', ') + ' 공연 기준, 출차가 몰리기 시작하는 때는 ' + hhmm(r10(rs + SHOW_LEN)) + ' 무렵입니다.' + (others.length ? ' 같은 날 ' + others.map(nm).join(', ') + ' 공연 차량은 ' + (others.length > 1 ? '각각 ' : '') + others.map(e => hhmm(r10(toMin(e.s) + SHOW_LEN))).join(', ') + ' 무렵부터 나갑니다.' : ''));
+  const st = document.createElement('div'); st.className = 'stats'; el.appendChild(st);
+  const stat = (l, v, unit, dsc, cls) => { const b = document.createElement('div'); b.className = 'stat'; b.innerHTML = '<div class="l"></div><div class="v"></div><div class="d"></div>'; b.children[0].textContent = l; b.children[1].textContent = v; if (cls) b.children[1].classList.add(cls); if (unit) { const s = document.createElement('small'); s.textContent = unit; b.children[1].appendChild(s); } b.children[2].textContent = dsc || ''; st.appendChild(b); };
+  if (x.has) stat('출구가 붐비는 시간', exitSpan(x), '', x.late ? '늦으면 ' + hhmm(x.late) + '까지 붐빌 수 있습니다' : '이 사이에 나가면 줄을 섭니다', 'time');
+  else stat('출구 대기', '거의 없음', '', '줄 서지 않고 빠져나갑니다');
+  stat('이날 공연 차량', '약 ' + fmt(Math.round(ex.N / 10) * 10), '대', '관객 1,000명당 ' + Math.round(Q.cars_per_1000) + '대 기준');
+  if (x.big8 && x.has) p('2024~2025년 KSPO DOME 관객 8,000명 이상 ' + (x.C.wk ? '평일' : '주말과 휴일') + ' 공연 ' + x.C.n + '일의 출구 기록을 보면 절반의 날은 시작 ' + dur(x.C.p50) + ' 뒤 원활해졌고, 4일 중 3일은 ' + dur(x.C.p75) + ' 안이었습니다.', 'desc').style.marginTop = '12px';
+  if (x.u) p('공연 시작 시각이 아직 공개되지 않아 요일별 보통 시각으로 계산했습니다. 시각이 정해지면 바뀝니다.', 'foot');
+  const G = Q.gate_share, gs = ['동2', '북2', '남2'].map(k => Math.round(G[k] * 100)), other = Math.round((1 - G['동2'] - G['북2'] - G['남2']) * 100);
+  p('출구별 출차 비중은 동2문 ' + gs[0] + '%, 북2문 ' + gs[1] + '%, 남2문 ' + gs[2] + '%이고 나머지 ' + other + '%는 다른 출입문으로 나갑니다. 남2문이 상대적으로 덜 붐빕니다.', 'foot');
+}
+function closeCal(focusEl) {
+  const c = $('#calCard'); if (c.hidden) return;
+  c.hidden = true; $('#calBtn').setAttribute('aria-expanded', 'false');
+  if (focusEl) focusEl.focus({ preventScroll: true });
+}
+function renderCalendar() {
+  const box_ = $('#calMonths'); box_.replaceChildren();
+  const months = [...new Set(A.days.map(d => d.d.slice(0, 7)))];
+  months.forEach(ym => {
+    const [y, mo] = ym.split('-').map(Number);
+    const wrap = document.createElement('div'); wrap.className = 'cal';
+    const h = document.createElement('h3'); h.textContent = y + '년 ' + mo + '월'; wrap.appendChild(h);
+    const grid = document.createElement('div'); grid.className = 'cal-grid';
+    WDS.forEach((w, k) => { const e = document.createElement('div'); e.className = 'wh' + (k === 0 ? ' sun' : k === 6 ? ' sat' : ''); e.textContent = w; e.setAttribute('aria-hidden', 'true'); grid.appendChild(e); });
+    const first = new Date(Date.UTC(y, mo - 1, 1)).getUTCDay();
+    const nd = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+    for (let k = 0; k < first; k++) { const e = document.createElement('div'); grid.appendChild(e); }
+    for (let dd = 1; dd <= nd; dd++) {
+      const key = ym + '-' + String(dd).padStart(2, '0'), i = IDX[key];
+      const b = document.createElement('button'); b.type = 'button';
+      if (i === undefined) { b.className = 'cd off'; b.tabIndex = -1; b.setAttribute('aria-hidden', 'true'); grid.appendChild(b); continue; }
+      const d = A.days[i], s = summ(d), wd = (first + dd - 1) % 7, past = isPastD(d);
+      b.className = 'cd' + (isRed(d) || wd === 0 ? ' sun' : wd === 6 ? ' sat' : '') + (past ? ' past' : '');
+      b.setAttribute('aria-pressed', i === state.sel ? 'true' : 'false');
+      b.setAttribute('aria-label', dLabel(d) + (past ? ', 지난 날' : '') + ', 최대 ' + pct(s.pk) + '% ' + LV[s.lv].n + (d.ev.length ? ', 공연 ' + d.ev.length + '건' : ''));
+      b.title = dLabel(d) + ' 최대 ' + fmt(s.pk) + '대 (' + pct(s.pk) + '%)' + (d.ev.length ? ', 공연 ' + d.ev.length + '건' : '');
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = dd;
+      const bar = document.createElement('span'); bar.className = 'b'; bar.style.background = LV[s.lv].c;
+      const pc = document.createElement('span'); pc.className = 'pc'; pc.textContent = pct(s.pk) + '%';
+      b.appendChild(n); b.appendChild(bar); b.appendChild(pc);
+      if (d.ev.length) { const e = document.createElement('span'); e.className = 'e'; b.appendChild(e); }
+      b.onclick = () => {
+        closeCal();
+        selectDay(i, 'strip');
+        const yy = $('#vSign').getBoundingClientRect().top + window.scrollY - 140; window.scrollTo({ top: Math.max(0, yy), behavior: RM ? 'auto' : 'smooth' });
+      };
+      grid.appendChild(b);
+    }
+    wrap.appendChild(grid); box_.appendChild(wrap);
+  });
+}
+function renderVisitor() {
+  renderNear();
+  renderStrip();
+  const d = A.days[state.sel], s = summ(d), x = exitInfo(d);
+  renderSign(d, s, x);
+  drawDay($('#dayChart'), d);
+  renderDayTable(d);
+  renderEvents(d);
+  renderExit(d, x);
+  if (!$('#calCard').hidden) renderCalendar();
+}
+/* ---------- 운영자 ---------- */
+function alertOf(s) {
+  if (s.pk >= CAP * 0.7) return s.h90 ? { n: '혼잡 경보', tag: '매우 혼잡 가능 ' + s.h90[0] + '시부터', c: 'var(--lv3)', k: 3 } : { n: '혼잡 경보', c: 'var(--lv2)', k: 2 };
+  if (s.hiMax >= CAP * 0.7) return { n: '혼잡 주의', c: 'var(--lv1)', k: 1 };
+  return null;
+}
+function guideStart(r) {
+  const cs = r.s.w70 ? r.s.w70[0] : (r.s.h70 ? r.s.h70[0] : r.s.pkH);
+  const bigs = r.d.ev.filter(e => BIG.includes(e.v));
+  const bs = bigs.length ? Math.floor(Math.min.apply(null, bigs.map(e => toMin(e.s))) / 60) : 99;
+  return Math.max(8, Math.min(cs - 2, bs - 5));
+}
+// two or three sentences for the organiser's booking message: busy hours, exit rush, public transport
+const dayUrl = d => (location.origin && location.origin !== 'null' ? location.origin : 'file://') + location.pathname + '#visitor/' + d.d;
+function noticeText(d, s, x) {
+  let t = '[올팍 주차날씨] ' + dLabel(d) + ' 올림픽공원 주차장은 ';
+  if (s.w90) t += span(s.w70) + '에 혼잡하고, 특히 ' + span(s.w90) + '에는 매우 혼잡할 것으로 예상됩니다.';
+  else if (s.w70) t += span(s.w70) + '에 혼잡할 것으로 예상됩니다.';
+  else if (s.h70) t += span(s.h70) + '에 혼잡할 수 있습니다.';
+  else t += (x && x.busy ? '여유로울 것으로 예상되지만 출구는 붐빕니다.' : '여유로울 것으로 예상됩니다.');
+  if (x && x.has) t += ' ' + (VN[x.ref.v] || x.ref.vn) + ' 공연 기준으로 공연이 끝난 뒤 ' + exitSpan(x) + '에는 출구가 ' + (x.late ? '붐비고, 늦으면 ' + hhmm(x.late) + '까지 이어질 수 있습니다.' : '붐빕니다.');
+  t += (s.hiLv >= 2 || (x && x.busy)) ? ' ' + TRANSIT + ' 등 대중교통을 이용해 주세요.' : ' 대중교통을 이용하시면 더 편리합니다.';
+  if (x && x.u) t += ' 공연 시작 시각이 정해지면 시간이 바뀔 수 있습니다.';
+  return t + ' 날짜별 예보: ' + dayUrl(d);
+}
+function copyText(text) {
+  const fallback = () => { const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } ta.remove(); return ok; };
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(() => true, () => fallback());
+  return Promise.resolve(fallback());
+}
+function renderOperator() {
+  const rows = A.days.slice(TODAY, TODAY + 14).map((d, k) => ({ d, i: TODAY + k, s: summ(d), x: exitInfo(d) }));
+  rows.forEach(r => { r.a = alertOf(r.s); r.past = isPastD(r.d); r.xq = !r.a && r.x && r.x.busy && (r.x.big8 || r.x.maxWait >= 10); });
+  const live = rows.filter(r => !r.past);
+  const warn = live.filter(r => r.a && r.a.k >= 2), caution = live.filter(r => r.a && r.a.k === 1), sev = live.filter(r => r.a && r.a.k === 3), xq = live.filter(r => r.xq);
+  const per = rows.length >= 14 ? '2주' : rows.length + '일';
+  const top = rows.reduce((a, b) => (b.s.pk > a.s.pk ? b : a));
+  const M = A.metrics, hit = M.warn_days_actual - M.missed_days;
+  const ad = M.alarm_p70_days, ah = M.alarm_p70_hits, cd = M.alarm_hionly_days, ch = M.alarm_hionly_hits;
+  $('#opDesc').textContent = '혼잡 기준은 기준 수용량의 70%이며, 경보는 예상치, 주의는 범위 상한 기준입니다. ' + (ad && cd ? '검증 기간 실제 혼잡 비율은 경보 ' + ad + '일 중 ' + ah + '일, 주의 ' + cd + '일 중 ' + ch + '일로 비슷해, ' : '') + '두 단계 모두 인력과 안내를 준비하고 주의일은 당일 아침 예보를 한 번 더 확인합니다. 관객 8,000명 이상 공연일은 등급과 관계없이 입차와 출구 유도 인력을 기본 배치합니다. 혼잡 경보 가운데 상한이 90%를 넘는 날은 매우 혼잡이 가능한 시각을 함께 표시하고, 주차는 여유로워도 관객 8,000명 이상 공연이 있거나 출구 대기가 10분을 넘는 날은 출구 혼잡으로 표시합니다. 2025년 하반기 검증에서 실제로 70%를 넘은 ' + M.warn_days_actual + '일 ' + (M.missed_days ? '가운데 ' + hit + '일이' : '모두') + ' 미리 경보나 주의를 받았습니다. 행을 누르면 방문객 화면에서 그날을 열고, 공지 문구 복사는 공연 주최사 예매 안내 문자에 넣을 문장과 날짜 주소를 복사합니다.';
+  $('#opDate').textContent = ENDED ? '예보 기간 종료, 마지막 예보일 ' + dLabel(rows[0].d, true) : dLabel(rows[0].d, true) + '부터 ' + per;
+  $('#opHead').textContent = ENDED ? '예보 기간이 지났어요' : warn.length ? '혼잡 경보 ' + warn.length + '일' + (caution.length ? ', 주의 ' + caution.length + '일' : '') : caution.length ? '혼잡 주의 ' + caution.length + '일' : xq.length ? '출구 혼잡 ' + xq.length + '일' : per + '간 경보 없음';
+  const sub = $('#opSub'); sub.replaceChildren(lvChip(top.s.lv)); sub.appendChild(document.createTextNode((rows.length > 1 ? per + ' 중 가장 붐비는 날 ' : '') + dLabel(top.d, true) + ', 최대 ' + fmt(top.s.pk) + '대 (' + pct(top.s.pk) + '%)'));
+  const list = (rs, f) => rs.length ? rs.map(r => dLabel(r.d, true) + (f ? ' ' + f(r) : '')).join(', ') : '없음';
+  setRows($('#opRows'), [
+    ['경보일', list(warn)],
+    ['주의일', list(caution)],
+    ['매우 혼잡 가능', list(sev, r => r.s.h90[0] + '시부터')],
+    ['출구 혼잡', list(xq)],
+    ['출구 인력', '동2, 북2 방향 차량 남2문 유도'],
+    ['대응 단계', '경보일과 주의일 모두 인력과 안내 준비, 주의일은 당일 아침 예보 재확인'],
+    ['대형 공연일', '관객 8,000명 이상이면 등급과 관계없이 입차와 출구 유도 인력 기본 배치']
+  ]);
+  const exw = r => (r.x && r.x.has) ? hhmm(r.x.from) + '~' + hhmm(r.x.late || r.x.to) : null;   // staff stay until the late clearing time
+  const tb = rows.map(r => {
+    const a = r.a, xw = exw(r), gate = xw ? xw + ' 동2, 북2 방향 차량 남2문 유도' : null;
+    let act;
+    const big8 = r.x && r.x.big8;
+    if (a && a.k >= 2) act = guideStart(r) + '시부터 대중교통 안내와 안내 인력 배치' + (gate ? ', ' + gate : '');
+    else if (a) act = guideStart(r) + '시부터 대중교통 안내와 안내 인력 준비, 당일 아침 예보 재확인' + (gate ? ', ' + gate : '');
+    else if (big8) act = '입차와 출구 유도 인력 기본 배치' + (gate ? ', ' + gate : '');
+    else act = gate || '평시 운영';
+    const chip = k => '<span class="chip"><i style="background:' + LV[k].c + '"></i>' + LV[k].n + '</span>';
+    const alc = a ? '<span class="al"><i style="background:' + a.c + '"></i>' + a.n + '</span>' + (a.tag ? ' <span class="al tag">' + a.tag + '</span>' : '') : r.xq ? '<span class="al"><i style="background:var(--lv2)"></i>출구 혼잡</span>' : '<span style="color:var(--muted)">없음</span>';
+    const calm = !a && !r.xq && act === '평시 운영';
+    return '<tr class="click' + (r.i === state.sel ? ' sel' : '') + (calm ? ' calm' : '') + (r.past ? ' past' : '') + '" data-i="' + r.i + '" tabindex="0"><td data-label="날짜"><b>' + dLabel(r.d, true) + '</b>' + (r.past ? ' <span class="pastm">지난 날</span>' : '') + '</td><td class="ev-c" data-label="공연"></td><td class="num" data-label="최대 예측">' + fmt(r.s.pk) + '대</td><td class="num" data-label="상한">' + fmt(r.s.hiMax) + '대</td><td data-label="예상 등급">' + chip(r.s.lv) + '</td><td class="alc" data-label="경보 단계">' + alc + '</td><td class="wrap" data-label="권장 조치"><span class="act">' + act + '</span></td></tr>';
+  }).join('');
+  const t = $('#opTable');
+  t.innerHTML = '<table><thead><tr><th>날짜</th><th>공연</th><th class="num">최대 예측</th><th class="num">상한</th><th>예상 등급</th><th>경보 단계</th><th>권장 조치</th></tr></thead><tbody>' + tb + '</tbody></table>' + (rows.length < 14 ? '<p class="foot">예보는 ' + dLabel(A.days[A.days.length - 1], true) + '까지 제공합니다.</p>' : '');
+  t.querySelectorAll('tbody tr').forEach((tr, k) => {
+    const r = rows[k], evs = r.d.ev.slice().sort((x, y) => toMin(x.s) - toMin(y.s));
+    const ev0 = evs.slice().sort((x, y) => (y.a || 0) - (x.a || 0))[0];
+    const cell = tr.querySelector('.ev-c');
+    cell.textContent = ev0 ? (VN[ev0.v] || ev0.vn) + ' ' + evTime(ev0) + (evs.length > 1 ? ' 외 ' + (evs.length - 1) + '건' : '') : '없음';
+    const badge = txt => { const bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = txt; cell.appendChild(document.createTextNode(' ')); cell.appendChild(bd); };
+    if (ev0 && ev0.m) badge('발표 기준');
+    if (ev0 && ev0.u) badge('시간 미정');
+    if (!r.past && (r.d.ev.length || r.a || r.xq)) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'copyb';
+      b.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 3.5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>공지 문구 복사';
+      b.setAttribute('aria-label', dLabel(r.d) + ' 공지 문구 복사');
+      b.onclick = e => { e.stopPropagation(); copyText(noticeText(r.d, r.s, r.x)).then(ok => { toast(ok ? '공지 문구를 복사했어요' : '복사하지 못했어요. 다시 눌러 주세요'); }); };
+      b.onkeydown = e => e.stopPropagation();
+      tr.querySelector('td.wrap').appendChild(b);
+    }
+    const open = kb => { state.sel = +tr.dataset.i; go('visitor'); window.scrollTo({ top: 0 }); announce(annText(state.sel)); if (kb) { const s = $('#strip [aria-pressed="true"]'); if (s) s.focus({ preventScroll: true }); } };
+    tr.onclick = e => { if (!e.target.closest('.copyb')) open(false); };
+    tr.onkeydown = e => { if (e.target === tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(true); } };
+  });
+  renderWhatIf();
+  renderQueue();
+}
+// default preview: the nearest Saturday from today with two or more shows where a show at a free big venue changes the grade;
+// otherwise, as before, the first weekend day without a big show with KSPO DOME
+function defaultWi() {
+  const snap = v => { const r = $('#wiAud'); r.value = v; return +r.value; };
+  for (let i = TODAY; i < A.days.length; i++) {
+    const d = A.days[i];
+    if (isPastD(d) || d.w !== 5 || d.ev.length < 2) continue;
+    const venue = ['HANDBALL', 'OLHALL', 'KSPO'].find(v => !d.ev.some(e => e.v === v));
+    if (!venue) continue;
+    const add = incCurve('we', state.wi.start, snap(A.resp_aud[venue]));
+    if (summ(Object.assign({}, d, { p: d.p.map((v, h) => v + add[h]), hi: d.hi.map((v, h) => v + add[h]) })).lv !== summ(d).lv) return { date: i, venue };
+  }
+  for (let i = TODAY; i < A.days.length; i++) { const d = A.days[i]; if (!isPastD(d) && isWeekendish(d) && !d.ev.some(e => BIG.includes(e.v))) return { date: i, venue: 'KSPO' }; }
+  return { date: TODAY, venue: 'KSPO' };
+}
+function initWhatIf() {
+  const def = defaultWi();
+  state.wi.date = def.date; state.wi.venue = def.venue;
+  const ds = $('#wiDate');
+  A.days.forEach((d, i) => { if (i < TODAY) return; const o = document.createElement('option'); o.value = i; o.textContent = dLabel(d, true) + (d.ev.length ? ', 공연 ' + d.ev.length : ''); ds.appendChild(o); });
+  const ss = $('#wiStart');
+  for (let h = 11; h <= 20; h++) { const o = document.createElement('option'); o.value = h; o.textContent = h + ':00'; ss.appendChild(o); }
+  ds.value = state.wi.date; ss.value = state.wi.start; $('#wiVenue').value = state.wi.venue;
+  const setAud = v => { const r = $('#wiAud'); r.value = v; state.wi.aud = +r.value; };   // the slider snaps to its step, the state follows the slider
+  setAud(A.resp_aud[state.wi.venue]);
+  ds.onchange = () => { state.wi.date = +ds.value; renderWhatIf(); };
+  ss.onchange = () => { state.wi.start = +ss.value; renderWhatIf(); };
+  $('#wiVenue').onchange = e => { state.wi.venue = e.target.value; setAud(A.resp_aud[state.wi.venue]); renderWhatIf(); };
+  $('#wiAud').oninput = e => { state.wi.aud = +e.target.value; renderWhatIf(); };
+}
+function whatIfRun(d, startH) {
+  const add = incCurve(isWeekendish(d) ? 'we' : 'wk', startH, state.wi.aud);
+  const ev = d.ev.concat([{ v: state.wi.venue, vn: VN[state.wi.venue], t: '추가 공연', s: String(startH).padStart(2, '0') + ':00', n: 1, a: state.wi.aud, wi: 1 }]);
+  const nd = Object.assign({}, d, { p: d.p.map((v, h) => v + add[h]), hi: d.hi.map((v, h) => v + add[h]), ev });
+  return { add, d: nd, s: summ(nd), x: exitInfo(nd) };
+}
+function renderWhatIf() {
+  const d = A.days[state.wi.date], r1 = whatIfRun(d, state.wi.start), r2 = whatIfRun(d, state.wi.start + 1);
+  const add = r1.add, s0 = summ(d), s1 = r1.s, x0 = exitInfo(d), x1 = r1.x, x2 = r2.x;
+  $('#wiAudOut').textContent = fmt(state.wi.aud) + '명';
+  const res = $('#wiResult'); res.replaceChildren();
+  const b = t => { const e = document.createElement('b'); e.textContent = t; return e; };
+  res.appendChild(document.createTextNode('최대 주차 '));
+  res.appendChild(b(fmt(s0.pk) + '대'));
+  const ar = document.createElement('span'); ar.className = 'arrow'; ar.textContent = '→'; res.appendChild(ar);
+  res.appendChild(b(fmt(s1.pk) + '대'));
+  res.appendChild(document.createTextNode(' (' + (s1.pk >= s0.pk ? '+' : '') + fmt(s1.pk - s0.pk) + '대), 등급 '));
+  res.appendChild(lvChipPlain(s0.lv));
+  const ar2 = document.createElement('span'); ar2.className = 'arrow'; ar2.textContent = '→'; res.appendChild(ar2);
+  res.appendChild(lvChipPlain(s1.lv));
+  if (s1.pk > CAP) res.appendChild(document.createTextNode(', 기준 수용량 3,600대를 넘어 만차가 예상됩니다.'));
+  else if (s1.w70) res.appendChild(document.createTextNode(', 혼잡 시간 ' + span(s1.w70) + '.'));
+  else res.appendChild(document.createTextNode('.'));
+  const same = d.ev.filter(e => e.v === state.wi.venue);
+  if (same.length) res.appendChild(document.createTextNode(' 이날 ' + VN[state.wi.venue] + '에는 이미 ' + evTime(same[0]) + ' 공연이 있습니다.'));
+  // exit queue before and after, and the same show starting one hour later (same queue model as the visitor screen)
+  const wait = x => (x && x.maxQ >= 5 && Math.round(x.maxWait) > 0 ? '최대 ' + Math.round(x.maxWait) + '분' : '거의 없음');
+  const rush = x => (x && x.has ? exitSpan(x) + (x.late ? ', 늦으면 ' + hhmm(x.late) + '까지' : '') : '없음');
+  const more = $('#wiMore'); more.replaceChildren();
+  const line = (k, txt) => { const p = document.createElement('div'); const s = document.createElement('span'); s.className = 'k'; s.textContent = k; p.appendChild(s); p.appendChild(document.createTextNode(' ' + txt)); more.appendChild(p); };
+  line('출구', '대기 ' + wait(x0) + ' → ' + wait(x1) + ', 붐비는 시간 ' + rush(x1));
+  line('1시간 늦추면', (state.wi.start + 1) + ':00 시작, 최대 주차 ' + fmt(r2.s.pk) + '대, 출구 대기 ' + wait(x2) + ', 붐비는 시간 ' + rush(x2));
+  drawStack($('#wiChart'), d, add);
+}
+function incCurve(key, startH, aud) {
+  const P = A.inc.per1000[key], r0 = A.inc.rel0, st = A.inc.step;
+  // before the curve starts (6 hours ahead) the increase fades to 0 over 2 hours instead of jumping
+  const at = rel => { if (rel < r0) return P[0] * Math.max(0, 1 - (r0 - rel) / 120); const i = Math.round((rel - r0) / st); return i < P.length ? P[i] : 0; };
+  const add = new Array(24).fill(0);
+  for (let h = 0; h < 24; h++) {
+    let s = 0;
+    for (let k = 0; k < 6; k++) {
+      const clock = h * 60 + k * 10, rel = clock - startH * 60;
+      const wake = rel < 0 ? Math.max(0, Math.min(1, (clock - 420) / 120)) : 1;   // no show traffic before 7:00, full from 9:00
+      s += at(rel) * wake;
+    }
+    add[h] = Math.max(0, s / 6) * aud / 1000;
+  }
+  return add;
+}
+function lvChipPlain(k) { const c = document.createElement('span'); c.className = 'chip'; const i = document.createElement('i'); i.style.background = LV[k].c; c.appendChild(i); c.appendChild(document.createTextNode(LV[k].n)); return c; }
+function drawStack(el, d, add) {
+  const { svg, tip, w, H } = box(el, 250);
+  const m = { l: 46, r: 14, t: 14, b: 28 };
+  const tot = HRS.map(h => d.p[h] + add[h]);
+  const ymax = Math.max(CAP, niceMax(Math.max.apply(null, tot), 400));
+  const pw = w - m.l - m.r, ph = H - m.t - m.b, n = HRS.length, bw = pw / n, barW = Math.max(6, Math.min(24, bw - 5));
+  const xc = i => m.l + i * bw + bw / 2, y = v => m.t + ph - (Math.min(v, ymax) / ymax) * ph;
+  const g = S('g', {}, svg);
+  const ticks = []; for (let v = 0; v <= ymax; v += 1000) ticks.push(v);
+  ticks.forEach(v => { const yy = y(v); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: v ? 'grid' : 'base' }, g); T(g, m.l - 7, yy + 4, fmt(v), { class: 'tick', 'text-anchor': 'end' }); });
+  const thr = [[0.7, 'var(--lv2)', '혼잡 70%'], [0.9, 'var(--lv3)', '매우 혼잡 90%']];
+  thr.forEach(t => { const yy = y(CAP * t[0]); S('line', { x1: m.l, x2: w - m.r, y1: yy, y2: yy, class: 'thr', stroke: t[1] }, g); });
+  const cols = [];
+  HRS.forEach((h, i) => {
+    const x0 = xc(i) - barW / 2, base = d.p[h], a = add[h];
+    const gg = S('g', {}, g); cols.push(gg);
+    if (a >= 8) {
+      S('path', { d: roundTopBar(x0, x0 + barW, y(base + a), y(base) - 2, 4), fill: 'var(--s1)' }, gg);
+      S('rect', { x: x0, y: y(base), width: barW, height: Math.max(0, y(0) - y(base)), fill: 'var(--base)' }, gg);
+    } else {
+      S('path', { d: roundTopBar(x0, x0 + barW, y(base), y(0), 4), fill: 'var(--base)' }, gg);
+    }
+    if (h % 3 === 0) T(g, xc(i), H - m.b + 17, h + '시', { class: 'tick', 'text-anchor': 'middle' });
+  });
+  thr.forEach(t => T(g, m.l + 4, y(CAP * t[0]) - 5, t[2], { class: 'lab halo' }));
+  S('rect', { class: 'hit', x: m.l, y: m.t, width: pw, height: ph, fill: 'transparent' }, svg);
+  const show = i => {
+    cols.forEach((c, k) => c.setAttribute('opacity', k === i ? 1 : 0.55));
+    const h = HRS[i], t = d.p[h] + add[h];
+    const rows = [
+      { v: fmt(t) + '대', k: pct(t) + '% ' + LV[lvOf(t)].n },
+      { v: fmt(d.p[h]) + '대', k: '기존 예측', c: 'var(--base)', sq: true },
+      { v: '+' + fmt(add[h]) + '대', k: '추가 공연', c: 'var(--s1)', sq: true }
+    ];
+    if (t > CAP) rows.splice(1, 0, { v: fmt(t - CAP) + '대', k: '기준 수용량 초과' });
+    tipShow(tip, h + '시', rows, xc(i), m.t, w);
+    el._hi = i;
+  };
+  const hide = () => { cols.forEach(c => c.setAttribute('opacity', 1)); tip.hidden = true; el._hi = null; };
+  wireHover(el, svg, tip, n, px => Math.floor((px - m.l) / bw), show, hide);
+}
+function initQueue() {
+  const PRE = { one: A.resp_aud.KSPO, two: A.resp_aud.KSPO + A.resp_aud.OLHALL };
+  const setAud = v => { const r = $('#qAud'); r.value = v; state.q.aud = +r.value; };
+  setAud(PRE.two);
+  $('#qCp').value = state.q.cp;
+  $('#qPreset').querySelectorAll('button').forEach(b => { b.onclick = () => { $('#qPreset').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); setAud(PRE[b.dataset.v]); renderQueue(); }; });
+  $('#qAud').oninput = e => { state.q.aud = +e.target.value; $('#qPreset').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', 'false')); renderQueue(); };
+  $('#qCp').oninput = e => { state.q.cp = +e.target.value; renderQueue(); };
+  const seg = (id, keyName) => $(id).querySelectorAll('button').forEach(b => { b.onclick = () => { $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); state.q[keyName] = keyName === 'delay' ? +b.dataset.v : b.dataset.v; renderQueue(); }; });
+  seg('#qDelay', 'delay'); seg('#qDay', 'day');
+}
+function renderQueue() {
+  const N = state.q.aud * Q.cars_per_1000 / 1000, bg = Q.bg_per_min[state.q.day], cp = state.q.cp / 100;
+  $('#qAudOut').textContent = fmt(state.q.aud) + '명'; $('#qCpOut').textContent = state.q.cp + '%';
+  const r0 = simulate(N, bg, 0, state.q.delay), r1 = simulate(N, bg, cp, state.q.delay);
+  const st = $('#qStats'); st.replaceChildren();
+  const stat = (l, v0, v1, unit, good) => {
+    const b = document.createElement('div'); b.className = 'stat';
+    const L = document.createElement('div'); L.className = 'l'; L.textContent = l;
+    const V = document.createElement('div'); V.className = 'v'; V.textContent = v1; const u = document.createElement('small'); u.textContent = unit; V.appendChild(u);
+    const D = document.createElement('div'); D.className = 'd' + (good ? ' good' : ''); D.textContent = v0;
+    b.appendChild(L); b.appendChild(V); b.appendChild(D); st.appendChild(b);
+  };
+  const red = (a, b) => (a > 0 ? Math.round((1 - b / a) * 100) : 0);
+  stat('가장 길게 기다리는 시간', '쿠폰 없을 때 ' + Math.round(r0.maxWait) + '분', String(Math.round(r1.maxWait)), '분', r1.maxWait < r0.maxWait);
+  stat('최대 대기 차량', '쿠폰 없을 때 ' + fmt(r0.maxQ) + '대', fmt(r1.maxQ), '대', r1.maxQ < r0.maxQ);
+  stat('모든 차량의 대기 시간 합계', '쿠폰 없을 때보다 ' + red(r0.tot, r1.tot) + '% 감소', fmt(r1.tot / 60), '시간', r1.tot < r0.tot);
+  const part = Math.round(N * cp);
+  stat('입점 매장 매출', fmt(part) + '대 참여, 1대당 최소 구매액 5천 원 기준', fmt(part * 5000 / 10000), '만 원', false);
+  const lim = 150 - T0 + 1;
+  const el = $('#qChart'), cw = el.clientWidth || el.parentNode.clientWidth || 600;
+  const tl = (cw - 62) / (lim - 1) * 30 >= 50 ? [-30, 0, 30, 60, 90, 120, 150] : [-30, 0, 60, 120];   // 30-minute ticks only when the labels fit
+  const xs = tl.map(t => [t - T0, t === 0 ? '종료' : (t > 0 ? '+' : '') + t + '분', t === 150 ? 'end' : 'middle']);
+  const ymax = Math.max(100, niceMax(Math.max(r0.maxQ, r1.maxQ) * 1.1, 100));
+  const yt = []; const step = ymax > 600 ? 200 : 100; for (let v = 0; v <= ymax; v += step) yt.push(v);
+  lineChart(el, {
+    H: 220, n: lim, ymax: ymax, yticks: yt, yfmt: v => fmt(v) + '대',
+    series: [{ vals: Array.from(r0.q).slice(0, lim), c: 'var(--cmp)' }, { vals: Array.from(r1.q).slice(0, lim), c: 'var(--s1)' }],
+    xticks: xs.filter(t => t[0] < lim), xgrid: [-T0],
+    tipTitle: i => { const t = i + T0; return t === 0 ? '공연 종료 시점' : '종료 ' + (t > 0 ? t + '분 후' : -t + '분 전'); },
+    tipRows: i => [{ v: fmt(r0.q[i]) + '대', k: '쿠폰 없음', c: 'var(--cmp)' }, { v: fmt(r1.q[i]) + '대', k: '쿠폰 적용', c: 'var(--s1)' }]
+  });
+  $('#qNote').textContent = '가정: 관객 1,000명당 ' + Math.round(Q.cars_per_1000) + '대가 이 주차장을 씁니다. 2024~2025년 공연일 입차 증가분에서 구한 값입니다. 출구 세 곳은 10분에 ' + fmt(Q.service_per_min * 10) + '대를 처리한다고 보았습니다. 출입문별 10분 출차량의 상위 0.5% 수준을 더한 값입니다. 처리량을 공연일 상위 10% 수준인 10분 302대로 잡으면 대기는 더 짧아지고, 종료 직후 몰림이 70%면 더 길어집니다. 공연과 무관한 출차가 분당 ' + bg + '대 섞입니다. 공연 차량의 ' + Math.round(BURST * 100) + '%가 종료 직후 한꺼번에 몰려 나간다고 보았으며, 이 값은 ' + (Q.calib_wave && Q.calib_cars ? '보정한 날들의 실제 공연 관객 중앙값 ' + fmt(Q.calib_wave) + '명, 차량 약 ' + fmt(Q.calib_cars) + '대로 ' : '') + '과거 KSPO DOME 관객 8,000명 이상 공연일의 30분 최대 출차량 중앙값 ' + fmt(Q.obs_max30 || 701) + '대를 재현하도록 맞춘 것입니다. 쿠폰 참여율과 출차 집중 정도는 가정입니다. 이 결과는 계산값이며, 출구 처리량과 종료 직후 몰림 비율에 따라 크게 달라집니다. 시범 운영에서 실측합니다.';
+}
+/* ---------- 모델과 데이터 ---------- */
+function renderModel() {
+  const M = A.metrics, F = M.final, B = M.baseline, R = M.recent4w, SA = A.same_alarm;
+  const k = $('#kpis'); k.replaceChildren();
+  const kpi = (l, v, unit, d, good) => { const b = document.createElement('div'); b.className = 'stat kpi'; b.innerHTML = '<div class="l"></div><div class="v"></div><div class="d"></div>'; b.children[0].textContent = l; b.children[1].textContent = v; if (unit) { const s = document.createElement('small'); s.textContent = unit; b.children[1].appendChild(s); } b.children[2].textContent = d; if (good) b.children[2].classList.add('good'); k.appendChild(b); };
+  kpi('시간대별 평균 오차', fmt(F.MAE), '대', (R ? '최근 4주 평균 ' + fmt(R.MAE) + '대, ' : '') + '단순 요일 평균 ' + fmt(B.MAE) + '대보다 작음', true);
+  kpi('혼잡일 사전 경보', (M.warn_days_actual - M.missed_days) + '/' + M.warn_days_actual, '일', (M.missed_days ? '' : '실제 혼잡일을 모두 경보나 주의로 알림, ') + '알린 날 ' + M.warn_days_flagged + '일', true);
+  const FC = A.fieldcheck;
+  if (FC && FC.n_days) kpi('현장 만차 기록일 사전 알림', FC.alerted + '/' + FC.n_days, '일', FC.same_k ? '같은 ' + FC.same_k + '일 알림 시 최근 4주 평균 ' + FC.recent4w_same + '일' : '최근 4주 평균 ' + FC.recent4w + '일', true);
+  else if (SA) kpi(SA.k + '일씩 경보할 때 잡은 혼잡일', SA.model + '/' + SA.actual, '일', '최근 4주 평균은 ' + SA.recent4w + '일', true);
+  kpi('실제 변동 설명 비율', Math.round(F.R2 * 100), '%', (R ? '최근 4주 평균 ' + Math.round(R.R2 * 100) + '%, ' : '') + '단순 요일 평균 ' + Math.round(B.R2 * 100) + '%보다 높음', true);
+
+  const H = A.hold, n = H.d.length;
+  const ymax = niceMax(Math.max.apply(null, H.y.concat(H.p)), 500);
+  const xt = []; let lm = '';
+  H.d.forEach((s, i) => { const mo = s.slice(5, 7); if (mo !== lm) { xt.push([i, (+mo) + '월', 'start']); lm = mo; } });
+  const yt = []; for (let v = 0; v <= ymax; v += 1000) yt.push(v);
+  lineChart($('#hoChart'), {
+    H: 260, n: n, ymax: ymax, yticks: yt, yfmt: v => fmt(v), xticks: xt,
+    thr: [{ v: CAP * 0.7, c: 'var(--lv2)', label: '혼잡 70%' }],
+    series: [{ vals: H.b, c: 'var(--cmp)', w: 1.5 }, { vals: H.y, c: 'var(--ink)', w: 1.5 }, { vals: H.p, c: 'var(--s1)', w: 2 }],
+    tipTitle: i => { const s = H.d[i]; return (+s.slice(5, 7)) + '월 ' + (+s.slice(8, 10)) + '일 ' + WDS[dowSun(s)] + '요일' + (H.ev[i] ? ', 대형 공연' : ''); },
+    tipRows: i => [{ v: fmt(H.y[i]) + '대', k: '실제', c: 'var(--ink)' }, { v: fmt(H.p[i]) + '대', k: '올팍 주차날씨', c: 'var(--s1)' }, { v: fmt(H.b[i]) + '대', k: '단순 요일 평균', c: 'var(--cmp)' }]
+  });
+  // monthly table
+  const byM = {};
+  H.d.forEach((s, i) => { const mo = s.slice(0, 7); (byM[mo] = byM[mo] || { n: 0, e1: 0, e0: 0 }); byM[mo].n++; byM[mo].e1 += Math.abs(H.p[i] - H.y[i]); byM[mo].e0 += Math.abs(H.b[i] - H.y[i]); });
+  $('#hoTable').innerHTML = '<table><thead><tr><th>월</th><th class="num">일수</th><th class="num">올팍 주차날씨 오차</th><th class="num">단순 요일 평균 오차</th></tr></thead><tbody>' + Object.keys(byM).map(mo => '<tr><td>' + mo.replace('-', '년 ') + '월</td><td class="num">' + byM[mo].n + '</td><td class="num">' + fmt(byM[mo].e1 / byM[mo].n) + '대</td><td class="num">' + fmt(byM[mo].e0 / byM[mo].n) + '대</td></tr>').join('') + '</tbody></table><p class="note">하루 최대 주차 대수 기준 평균 절대 오차입니다.</p>';
+  const gp = Math.round((A.growth - 1) * 100);
+  // +2.2%: 한국체육산업개발주식회사_월별주차현황의 2025년 주차 대수 증가율 (조정자 지시서 WEB_FIX4.md, app_data에 없음)
+  $('#demoFoot').textContent = '공개된 입출차 데이터가 2025년 12월에서 끝나, 이 시연판은 1년 전 같은 때 값에 증가율 ' + gp + '%를 곱합니다. 2024년 9월 12일 시스템 교체 뒤 늘어난 하루 넘는 장기 주차 기록을 빼고 구했고, 기관 월별주차현황의 2025년 주차 대수 +2.2%와 맞습니다. 아직 대관 정보가 없는 공연은 공연장별 관객 중앙값을 씁니다. 같은 조건을 검증 기간에 적용하면 평균 오차는 ' + (A.demo ? fmt(Math.round(A.demo.MAE)) : '182') + '대이고, 운영 단계에서 입출차 기록을 주 1회나 월 1회 받으면 검증치인 ' + fmt(F.MAE) + '대 수준이 됩니다.';
+
+  renderField();
+  renderLive2();
+
+  const W = A.hold_week, nw = W.t.length;
+  const wymax = niceMax(Math.max.apply(null, W.hi.concat(W.y)), 500);
+  const wxt = [], wxg = [];
+  const stepD = ($('#wkChart').clientWidth || 600) < 560 ? 4 : 2;
+  W.t.forEach((s, i) => { if (s.slice(6, 8) === '00') { const md = s.slice(0, 5), dw = WDS[dowSun('2025-' + md)]; wxg.push(i); if (((+md.slice(3)) - 3) % stepD === 0) wxt.push([i + 12, (+md.slice(0, 2)) + '/' + (+md.slice(3)) + ' ' + dw]); } });
+  const wyt = []; for (let v = 0; v <= wymax; v += 1000) wyt.push(v);
+  lineChart($('#wkChart'), {
+    H: 240, n: nw, ymax: wymax, yticks: wyt, yfmt: v => fmt(v), xticks: wxt, xgrid: wxg,
+    band: { lo: W.lo, hi: W.hi },
+    series: [{ vals: W.y, c: 'var(--ink)', w: 1.5 }, { vals: W.p, c: 'var(--s1)', w: 2 }],
+    tipTitle: i => { const s = W.t[i]; return (+s.slice(0, 2)) + '월 ' + (+s.slice(3, 5)) + '일 ' + WDS[dowSun('2025-' + s.slice(0, 5))] + ' ' + (+s.slice(6, 8)) + '시'; },
+    tipRows: i => [{ v: fmt(W.y[i]) + '대', k: '실제', c: 'var(--ink)' }, { v: fmt(W.p[i]) + '대', k: '예측', c: 'var(--s1)' }, { v: fmt(W.lo[i]) + '~' + fmt(W.hi[i]) + '대', k: '범위' }]
+  });
+
+  // importance
+  const ib = $('#impBars'); ib.replaceChildren();
+  const mx = Math.max.apply(null, A.imp.map(r => r[1]));
+  const share = A.imp.filter(r => r[0] === '공연 관객 규모와 시작 시각' || r[0] === '최근 4주 이용 수준').reduce((t, r) => t + r[1], 0);
+  $('#impDesc').textContent = '모델이 판단에 쓴 정보의 비중입니다. 공연 정보와 최근 4주 이용 수준이 약 ' + Math.round(share / 5) * 5 + '%를 차지합니다.';
+  A.imp.forEach(r => {
+    const row = document.createElement('div'); row.className = 'r';
+    const l = document.createElement('span'); l.textContent = r[0];
+    const tr = document.createElement('div'); tr.className = 'track'; const f = document.createElement('div'); f.className = 'fill'; f.style.width = (r[1] / mx * 100).toFixed(1) + '%'; tr.appendChild(f);
+    const v = document.createElement('span'); v.className = 'pv'; v.textContent = r[1].toFixed(1) + '%';
+    row.appendChild(l); row.appendChild(tr); row.appendChild(v); ib.appendChild(row);
+  });
+
+  drawHeat($('#hmChart'));
+  legendLevels($('#hmLegend'));
+
+  // 공식 데이터명과 공공데이터포털 번호. 대관정보와 공연정보는 번호를 받지 못해 이름만 씁니다
+  const FQ = (A.fieldcheck && A.fieldcheck.quality) || {};
+  const src = [
+    ['한국체육산업개발주식회사_올림픽공원 입출차정보(전체구역)', '6,256,384건', '공공데이터포털 15159093, 2024~2025년 문화 빅데이터 플랫폼 파일 포함. 차량별 입차, 출차 시각과 출입문을 10분 단위 주차 대수로 재구성'],
+    ['한국체육산업개발주식회사_올림픽공원 대관정보', '5,482건', '공연장별 대관 기간과 신청 인원, 정산 관객 수. 예보에는 공연 전에 알 수 있는 신청 인원을 사용'],
+    ['한국체육산업개발(주)_올림픽공원공연정보', fmt(N_EVENTS) + '건', '자유 형식의 공연 시간 문구를 날짜별 시작 시각으로 해석'],
+    ['한국체육산업개발주식회사_주차장 혼잡도 정보', FQ.rows ? fmt(FQ.rows) + '건' : '', '공공데이터포털 15164156. 주차구역 만차 기록. 현장 만차 대조와 가까운 구역 마감 시각에 사용'],
+    ['한국체육산업개발주식회사_실시간 주차현황', '북2, 동2, 남2문', '공공데이터포털 15168686. 현재 주차 대수. 공개해 둔 예보의 채점과 운영 시 실시간 대조에 사용'],
+    ['한국체육산업개발주식회사_월별주차현황', '월별', '공공데이터포털 15131671. 시연판 증가율 확인에 사용'],
+    ['기상청 서울 일별 관측자료', '2024~2026년', '기온, 강수량, 구름양. 미래 날짜는 앞선 해 같은 날의 날씨를 비 없이 쓰고 운영 시 단기 예보로 교체']
+  ];
+  const ul = $('#srcList'); ul.replaceChildren();
+  src.forEach(s => { const li = document.createElement('li'); li.innerHTML = '<span class="k"></span><span class="m"></span><span class="x"></span>'; li.children[0].textContent = s[0]; li.children[1].textContent = s[1]; li.children[2].textContent = s[2]; ul.appendChild(li); });
+}
+// field records: the operator's own full-zone flags against the forecast (shown only when the data carry them)
+function renderField() {
+  const f = A.fieldcheck, card = $('#fieldCard');
+  card.hidden = !(f && f.n_days);
+  if (card.hidden) return;
+  const all = f.n_days_all || f.n_days, drop = (f.no_parking_data || []).map(mdText), same = f.same_k && f.recent4w_same != null;
+  $('#fieldDesc').textContent = '운영자가 북2, 동2, 남2문 주차장 주차구역 3곳 이상을 만차로 기록한 검증 기간 ' + (all > f.n_days ? all + '일 가운데 입출차 기록이 있는 ' + f.n_days + '일을 ' : f.n_days + '일을 ') + (f.alerted === f.n_days ? '모두' : f.alerted + '일') + ' 미리 경보 ' + f.warn + '일, 주의 ' + f.caution + '일로 알렸습니다.'
+    + (same ? ' 경보와 주의를 낸 날을 ' + f.same_k + '일로 같게 맞추면 ' + (f.recent4w_same === f.weekday_same ? '최근 4주 평균과 단순 요일 평균은 각각 ' + f.recent4w_same + '일을' : '최근 4주 평균은 ' + f.recent4w_same + '일, 단순 요일 평균은 ' + f.weekday_same + '일을') + ' 잡았습니다.' : ' 같은 기준으로 최근 4주 평균은 ' + f.recent4w + '일, 단순 요일 평균은 ' + f.weekday + '일이었습니다.')
+    + (drop.length ? ' ' + drop.join(', ') + '은 입출차 기록이 없어 채점에서 뺐습니다.' : '');
+  const st = $('#fieldStats'); st.replaceChildren();
+  const basis = same ? '같은 ' + f.same_k + '일 알림 기준' : '같은 경보 기준';
+  [['올팍 주차날씨', f.alerted, '경보 ' + f.warn + '일, 주의 ' + f.caution + '일', true], ['최근 4주 평균', same ? f.recent4w_same : f.recent4w, basis, false], ['단순 요일 평균', same ? f.weekday_same : f.weekday, basis, false]].forEach(r => {
+    const b = document.createElement('div'); b.className = 'stat';
+    b.innerHTML = '<div class="l"></div><div class="v"></div><div class="d"></div>';
+    b.children[0].textContent = r[0]; b.children[1].textContent = r[1] + '/' + f.n_days; const s = document.createElement('small'); s.textContent = '일'; b.children[1].appendChild(s);
+    b.children[2].textContent = r[2]; if (r[3]) b.children[2].classList.add('good');
+    st.appendChild(b);
+  });
+  st.style.gridTemplateColumns = 'repeat(auto-fit,minmax(130px,1fr))';
+  $('#fieldZone').textContent = f.zone_full_occ_median ? '운영자가 주차구역 만차를 기록한 시각의 전체 주차 대수는 중앙값 ' + fmt(f.zone_full_occ_median) + '대이고' + (f.zone_full_below_T != null ? ', 기록의 ' + Math.round(f.zone_full_below_T) + '%는 전체가 ' + fmt(CAP * 0.7) + '대에 이르기 전이었습니다.' : '입니다.') : '';
+  $('#fieldSrc').textContent = [f.period, f.source].filter(Boolean).join(', ');
+}
+// the forecast published in advance against the live parking count (shown only when the data carry it)
+const LIVE_VER = { v1: '11월 15일 공개판', v2: '11월 18일 20시 공개판', v3: '11월 18일 22시 공개판' };
+const LIVE_VER_S = { v1: '11/15', v2: '11/18 20시', v3: '11/18 22시' };
+function renderLive2() {
+  const L = A.live2 || [], card = $('#live2Card');
+  card.hidden = !L.length;
+  if (card.hidden) return;
+  const rows = L.slice().sort((a, b) => (a.d + a.t < b.d + b.t ? -1 : 1));
+  const scored = rows.filter(r => +r.s === 1);                 // 10~22시 채점 대상만으로 범위 안 비율을 셈
+  const inR = r => r.api >= r.lo && r.api <= r.hi;
+  const inn = scored.filter(inR).length, days = [...new Set(scored.map(r => r.d))];
+  const used = [...new Set(rows.map(r => r.v || 'v1'))].sort().map(v => LIVE_VER[v] || v);
+  $('#live2Desc').textContent = '11월 18일 22시 저장소에 공개한 채점 규칙대로, 공연 전에 공개한 예보를 홈페이지 실시간 주차 대수와 맞춰 봅니다. 실시간 값에는 출차 기록이 없는 장기 주차 차량이 남아 그날 새벽 3시 무렵 값을 기준으로 맞춥니다. '
+    + (scored.length ? '채점 대상 ' + days.length + '일 ' + scored.length + '회 가운데 ' + inn + '회, ' + Math.round(inn / scored.length * 100) + '%가 예측 범위 안에 들었습니다.' : '아직 채점 대상 시각의 기록이 없습니다.') + ' 비교한 예보는 ' + used.join(', ') + '입니다.';
+  const lab = r => { const [, m, d] = ymdParts(r.d); return m + '/' + d + ' ' + r.t; };
+  const ymax = niceMax(Math.max.apply(null, rows.map(r => Math.max(r.hi, r.api, r.p))) + 100, 500);
+  const ymin = Math.max(0, Math.floor((Math.min.apply(null, rows.map(r => Math.min(r.lo, r.api, r.p))) - 100) / 500) * 500);
+  const yt = []; for (let v = ymin; v <= ymax; v += 500) yt.push(v);
+  const n = rows.length, el = $('#live2Chart');
+  const firsts = rows.map((r, i) => (i === 0 || rows[i - 1].d !== r.d ? i : -1)).filter(i => i >= 0);
+  lineChart(el, {
+    H: 220, n: n, ymin: ymin, ymax: ymax, yticks: yt, yfmt: v => fmt(v), m: { l: 48, r: 18 }, xgrid: firsts.filter(i => i > 0).map(i => i - 0.5),
+    band: { lo: rows.map(r => r.lo), hi: rows.map(r => r.hi) },
+    series: [{ vals: rows.map(r => r.p), c: 'var(--s1)', w: 2 }],
+    dots: rows.map((r, i) => ({ i, v: r.api, c: 'var(--ink)', o: +r.s === 1 ? 1 : 0.35 })),
+    xticks: firsts.map(i => { const [, mm, dd] = ymdParts(rows[i].d); return [i, mm + '/' + dd + ' ' + WDS[dowSun(rows[i].d)], 'start']; }),
+    tipTitle: i => lab(rows[i]) + (+rows[i].s === 1 ? '' : ', 채점 제외'),
+    tipRows: i => [{ v: fmt(rows[i].api) + '대', k: '실시간, 새벽 기준 보정', c: 'var(--ink)' }, { v: fmt(rows[i].p) + '대', k: LIVE_VER_S[rows[i].v || 'v1'] ? LIVE_VER_S[rows[i].v || 'v1'] + ' 공개 예보' : '공개한 예보', c: 'var(--s1)' }, { v: fmt(rows[i].lo) + '~' + fmt(rows[i].hi) + '대', k: '예측 범위' }]
+  });
+  const hasRaw = rows.some(r => r.raw != null);
+  $('#live2Table').innerHTML = '<table><thead><tr><th>날짜</th><th>시각</th><th>공개판</th>' + (hasRaw ? '<th class="num">실시간 원값</th>' : '') + '<th class="num">보정값</th><th class="num">공개한 예보</th><th class="num">예측 범위</th></tr></thead><tbody>' + rows.map(r => { const [, m, d] = ymdParts(r.d); return '<tr><td>' + m + '/' + d + ' ' + WDS[dowSun(r.d)] + '</td><td>' + r.t + '</td><td>' + (LIVE_VER_S[r.v || 'v1'] || r.v) + '</td>' + (hasRaw ? '<td class="num">' + (r.raw != null ? fmt(r.raw) : '') + '</td>' : '') + '<td class="num">' + fmt(r.api) + '</td><td class="num">' + fmt(r.p) + '</td><td class="num">' + fmt(r.lo) + '~' + fmt(r.hi) + (+r.s === 1 ? (inR(r) ? ' ✓' : '') : ' 제외') + '</td></tr>'; }).join('') + '</tbody></table><p class="note">단위는 대입니다. 보정값은 실시간 원값에서 그날 새벽 3시 무렵 값을 빼고 공개 예보의 새벽 3시 값을 더한 것이고, ✓는 보정값이 예측 범위 안이라는 뜻입니다. 채점은 10~22시 기록만 합니다.</p>';
+  // summary by published version, when the data carry it
+  const S = A.live2_summary && (A.live2_summary.metrics || A.live2_summary), sumEl = $('#live2Sum');
+  const keys = S ? ['v1', 'v2', 'v3', 'base'].filter(k => S[k]) : [];
+  sumEl.replaceChildren();
+  if (keys.length) {
+    const pc = v => (v == null ? '' : Math.round(v <= 1 ? v * 100 : v) + '%'), sg = v => (v == null ? '' : (v > 0 ? '+' : '') + fmt(v) + '대');
+    sumEl.className = 'tbl'; sumEl.style.marginTop = '12px';
+    sumEl.innerHTML = '<table><thead><tr><th>예보</th><th class="num">평균 오차</th><th class="num">치우침</th><th class="num">범위 안</th></tr></thead><tbody>' + keys.map(k => '<tr><td>' + (k === 'base' ? '비교 기준' : LIVE_VER[k]) + '</td><td class="num">' + (S[k].mae == null ? '' : fmt(S[k].mae) + '대') + '</td><td class="num">' + sg(S[k].bias) + '</td><td class="num">' + pc(S[k].coverage) + '</td></tr>').join('') + '</tbody></table>';
+  }
+}
+function drawHeat(el) {
+  const Hh = A.history, map = {};
+  Hh.d.forEach((s, i) => { map[s] = Hh.pk[i]; });
+  const start = '2024-01-01', [sy, sm, sd] = ymdParts(start);
+  const t0 = Date.UTC(sy, sm - 1, sd), t1 = Date.UTC(2025, 11, 31);
+  const offset = new Date(t0).getUTCDay();
+  const nDays = Math.round((t1 - t0) / 864e5) + 1, nW = Math.ceil((nDays + offset) / 7);
+  const gap = 2, m = { l: 26, t: 32, r: 6, b: 4 };
+  const avail = (el.parentNode && el.parentNode.clientWidth) || 900;
+  const cell = Math.max(8, Math.min(12, Math.floor((avail - m.l - m.r) / nW) - gap));
+  const W = m.l + nW * (cell + gap) + m.r, Hgt = m.t + 7 * (cell + gap) + m.b;
+  el.replaceChildren();
+  el.style.width = W + 'px';
+  const svg = S('svg', { width: W, height: Hgt, viewBox: '0 0 ' + W + ' ' + Hgt, role: 'img', 'aria-label': el.getAttribute('aria-label') }, el);
+  const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; el.appendChild(tip);
+  ['일', '', '화', '', '목', '', '토'].forEach((w, k) => { if (w) T(svg, m.l - 6, m.t + k * (cell + gap) + cell - 1, w, { class: 'tick', 'text-anchor': 'end' }); });
+  const cells = [];
+  let lastMo = -1;
+  for (let k = 0; k < nDays; k++) {
+    const t = t0 + k * 864e5, dt = new Date(t), iso = dt.toISOString().slice(0, 10);
+    const pos = k + offset, col = Math.floor(pos / 7), row = pos % 7;
+    const x = m.l + col * (cell + gap), y = m.t + row * (cell + gap);
+    if (dt.getUTCDate() === 1) { const mo = dt.getUTCMonth() + 1; if (mo !== lastMo) { if (mo === 1) T(svg, x, m.t - 20, dt.getUTCFullYear() + '년', { class: 'lab' }); T(svg, x, m.t - 6, String(mo), { class: 'tick' }); lastMo = mo; } }
+    const v = map[iso];
+    const r = S('rect', { x: x, y: y, width: cell, height: cell, rx: 2, fill: v == null ? 'none' : LV[lvOf(v)].c, stroke: v == null ? 'var(--line)' : 'none', 'stroke-width': 1 }, svg);
+    cells.push({ r, x, y, iso, v });
+  }
+  S('rect', { class: 'hit', x: m.l, y: m.t, width: nW * (cell + gap), height: 7 * (cell + gap), fill: 'transparent' }, svg);
+  const show = i => {
+    const c = cells[i]; cells.forEach(o => o.r.setAttribute('opacity', 1)); c.r.setAttribute('opacity', 0.6);
+    const [y, mo, dd] = ymdParts(c.iso);
+    tipShow(tip, y + '년 ' + mo + '월 ' + dd + '일 ' + WDS[dowSun(c.iso)], c.v == null ? [{ v: '기록 없음' }] : [{ v: fmt(c.v) + '대', k: pct(c.v) + '% ' + LV[lvOf(c.v)].n, c: LV[lvOf(c.v)].c, sq: true }], c.x + cell, 0, W);
+    // keep the tooltip inside the scroll box: above the cell when there is room, otherwise below it
+    const th = tip.offsetHeight, above = c.y - th - 6;
+    tip.style.top = (above >= 0 ? above : Math.min(c.y + cell + 6, Math.max(0, Hgt - th))) + 'px';
+    el._hi = i;
+  };
+  const hide = () => { cells.forEach(o => o.r.setAttribute('opacity', 1)); tip.hidden = true; el._hi = null; };
+  const hit = svg.querySelector('.hit');
+  const idxAt = (px, py) => { const col = Math.floor((px - m.l) / (cell + gap)), row = Math.floor((py - m.t) / (cell + gap)); const k = col * 7 + row - offset; return k >= 0 && k < cells.length ? k : null; };
+  const at = e => { const r = svg.getBoundingClientRect(); const k = idxAt(e.clientX - r.left, e.clientY - r.top); if (k == null) hide(); else show(k); };
+  hit.addEventListener('pointermove', at);
+  hit.addEventListener('pointerdown', at);       // a tap on a phone shows the same tooltip
+  hit.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') hide(); });
+  el.onkeydown = e => { const step = { ArrowLeft: -7, ArrowRight: 7, ArrowUp: -1, ArrowDown: 1 }[e.key]; if (!step) return; e.preventDefault(); const cur = el._hi == null ? cells.length - 1 : el._hi; show(Math.max(0, Math.min(cells.length - 1, cur + step))); };
+  el.onblur = hide;
+}
+/* ---------- router ---------- */
+// the public build (A.view === 'public') has no operator screen; #operator then opens the visitor screen
+const VIEWS = PUBLIC ? ['visitor', 'model'] : ['visitor', 'operator', 'model'];
+if (PUBLIC) { $('#t-operator').hidden = true; $('#view-operator').hidden = true; }
+const rendered = {};
+// addresses: #visitor, #visitor/2026-12-19 (a chosen day), #operator, #model
+const hashFor = v => (v === 'visitor' && state.sel !== DEF ? '#visitor/' + A.days[state.sel].d : '#' + v);
+function syncHash() {
+  if (state.view !== 'visitor') return;
+  const want = hashFor('visitor');
+  if (location.hash !== want && !(location.hash === '' && want === '#visitor')) { try { history.replaceState(null, '', want); } catch (e) { /* ignore */ } }
+}
+function parseHash() {
+  const h = decodeURIComponent(location.hash.slice(1)), k = h.indexOf('/');
+  return k < 0 ? { v: h, d: null } : { v: h.slice(0, k), d: h.slice(k + 1) };
+}
+function go(v, fromHash) {
+  if (!VIEWS.includes(v)) v = 'visitor';
+  state.view = v;
+  VIEWS.forEach(k => { $('#view-' + k).hidden = k !== v; const t = $('#t-' + k); t.setAttribute('aria-selected', k === v ? 'true' : 'false'); t.tabIndex = k === v ? 0 : -1; });
+  const want = hashFor(v);
+  if (!fromHash) { if (location.hash !== want) { try { history.pushState(null, '', want); } catch (e) { /* ignore */ } } }
+  else if (location.hash && location.hash !== want) { try { history.replaceState(null, '', want); } catch (e) { /* ignore */ } }
+  if (v === 'visitor') renderVisitor();
+  if (v === 'operator') renderOperator();
+  if (v === 'model') renderModel();
+  rendered[v] = true;
+}
+function applyHash() {
+  const h = parseHash();
+  if (h.v === 'visitor' && h.d && IDX[h.d] !== undefined) state.sel = IDX[h.d];
+  go(VIEWS.includes(h.v) ? h.v : 'visitor', true);
+}
+document.querySelectorAll('.tab').forEach(b => { b.onclick = () => { go(b.dataset.view); window.scrollTo({ top: 0 }); }; });
+$('.tabs').addEventListener('keydown', e => {
+  const i = VIEWS.indexOf(state.view);
+  const L = VIEWS.length, n = { ArrowRight: VIEWS[(i + 1) % L], ArrowLeft: VIEWS[(i + L - 1) % L], Home: VIEWS[0], End: VIEWS[L - 1] }[e.key];
+  if (!n) return;
+  e.preventDefault(); go(n); $('#t-' + n).focus();
+});
+$('#calBtn').onclick = () => { const c = $('#calCard'), open = c.hidden; c.hidden = !open; $('#calBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); if (open) renderCalendar(); };
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || $('#calCard').hidden) return;
+  if (state.view !== 'visitor') return;
+  e.preventDefault(); closeCal($('#calBtn'));
+});
+$('#shareBtn').onclick = () => {
+  const d = A.days[state.sel], url = location.href.split('#')[0] + '#visitor/' + d.d;
+  const hp = headParts(summ(d), exitInfo(d), d), text = dLabel(d) + ' 올림픽공원 주차장, ' + hp.main + (hp.exit ? ', ' + hp.exit : '');
+  if (navigator.share) { navigator.share({ title: '올팍 주차날씨', text: text, url: url }).catch(() => { /* closed */ }); return; }
+  copyText(url).then(ok => toast(ok ? '주소를 복사했어요' : '주소를 복사하지 못했어요'));
+};
+legendLevels($('#dayLegend'), true); legendLevels($('#calLegend'), false, true);
+$('#calDesc').textContent += ' 4개월 앞까지 예보하고 공연은 공개된 일정까지 반영합니다.';
+if (A.sched_horizon) { const [, hm, hd] = ymdParts(A.sched_horizon); $('#calDesc').textContent += ' ' + hm + '월 ' + hd + '일 이후는 공연 일정이 아직 거의 등록되지 않아 평소 수준으로 보이며, 공연이 등록되면 예보가 바뀝니다.'; }
+// how often the actual value fell inside the range: operating condition (validation) and the demo condition shown now
+const covSent = '운영 조건 검증에서는 실제 값의 ' + Math.round(A.metrics.band_coverage) + '%' + (A.demo && A.demo.coverage != null ? ', 지금 화면과 같은 시연 조건에서는 ' + (Number.isInteger(A.demo.coverage) ? A.demo.coverage : A.demo.coverage.toFixed(1)) + '%' : '') + '가 이 범위 안에 들었습니다.';
+$('#dayDesc').textContent = '막대는 예상치, 가는 세로선은 실제 값이 들어올 범위입니다. ' + covSent;
+document.querySelectorAll('.covSent').forEach(e => { e.textContent = covSent; });
+$('#pctNote').textContent = '%는 기준 수용량 ' + fmt(CAP) + '대 대비 예상 최대입니다.';
+$('#genNote').textContent = '공개 데이터로 만든 시연판, 예보 생성 ' + A.generated + '. 운영 시 매일 갱신하고 실시간 주차현황과 대조';
+// after 22:00 the default day is tomorrow, unless tonight's exit rush is still going on
+if (inRange && NOW.hour >= 22 && TODAY + 1 < A.days.length) {
+  const x = exitInfo(A.days[TODAY]);
+  if (!(x && x.busy && NOWMIN <= (x.late || x.to))) DEF = TODAY + 1;
+}
+state.sel = DEF;
+initWhatIf(); initQueue();
+window.addEventListener('hashchange', applyHash);
+let lastW = window.innerWidth, rt = null;
+window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(rt); rt = setTimeout(() => go(state.view, true), 150); });
+applyHash();
+})();
+</script>

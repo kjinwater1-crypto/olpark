@@ -1,0 +1,42 @@
+{
+ "period": "2025년 7~12월",
+ "source": "한국체육산업개발주식회사_주차장 혼잡도 정보",
+ "rule": "본 주차장 주차구역 3곳 이상 만차 표시",
+ "n_days": 12,
+ "alerted": 12,
+ "warn": 7,
+ "caution": 5,
+ "recent4w": 1,
+ "weekday": 0,
+ "same_k": 46,
+ "recent4w_same": 9,
+ "weekday_same": 9,
+ "n_days_all": 13,
+ "no_parking_data": [
+  "2025-08-02"
+ ],
+ "any_full_days": 21,
+ "any_full_alerted": 17,
+ "false_alarm_days": 22,
+ "false_alarm_with_full_zone": 7,
+ "zone_full_occ_median": 2043,
+ "zone_full_n": 195,
+ "zone_full_below_T": 74.4,
+ "quality": {
+  "rows": 699,
+  "first": "2025-02-12",
+  "last": "2026-08-12",
+  "days": 92,
+  "rows_2026": 30,
+  "time_mmss_is_month_day": 699,
+  "missing_seq": 31,
+  "missing_seq_range": [
+   463,
+   493
+  ],
+  "zones_with_two_ids": [
+   "P5",
+   "P7"
+  ]
+ }
+}
