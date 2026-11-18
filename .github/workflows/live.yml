@@ -1,0 +1,38 @@
+name: 실시간 주차 기록
+on:
+  schedule:
+    - cron: '4,24,44 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/live.yml', 'live/record.py']
+permissions:
+  contents: write
+concurrency:
+  group: live-parking-log
+  cancel-in-progress: false
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: src
+      - uses: actions/checkout@v4
+        with:
+          ref: live
+          path: log
+      - name: 기록
+        run: python3 src/live/record.py log
+      - name: 저장
+        if: always()
+        working-directory: log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -q -m "실시간 주차 기록 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')"
+            for i in 1 2 3; do git push -q origin HEAD:live && break; sleep 5; git pull -q --rebase origin live; done
+          fi
