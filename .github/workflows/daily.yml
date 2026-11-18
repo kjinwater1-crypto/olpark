@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/daily.yml', 'pipeline/run_site.py']
+    paths: ['.github/workflows/daily.yml', 'pipeline/run_site.py', 'pipeline/app/template.html', 'pipeline/scripts/**']
 permissions:
   contents: write
 concurrency:
