@@ -1,6 +1,6 @@
 """올림픽공원 홈페이지 주차 안내 페이지의 실시간 주차 대수와 시간대별 예상 이용률을 기록합니다.
 GitHub Actions가 20분마다 실행합니다.   사용법: python record.py <기록 폴더>"""
-import csv, datetime as dt, os, re, sys, urllib.request
+import csv, datetime as dt, os, re, sys, urllib.parse, urllib.request
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else '.'
 URL = 'https://www.ksponco.or.kr/online/main/parking.do'
@@ -18,7 +18,8 @@ def append(name, header, rows):
 
 
 def parse(html):
-    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', html.replace('&nbsp;', ' ')))
+    html = re.sub(r'<!--.*?-->', ' ', html, flags=re.S).replace('&nbsp;', ' ')
+    text = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', html))
     m = re.search(r'실시간\s*주차\s*대수[^:：]{0,40}[:：]\s*([\d,]+)\s*대\s*주차\s*중\s*/\s*([\d,]+)\s*대', text)
     if not m:
         raise ValueError('live count not found: ' + text[:200])
@@ -32,9 +33,15 @@ def parse(html):
 
 if __name__ == '__main__':
     try:
-        req = urllib.request.Request(URL, headers={'User-Agent': 'Mozilla/5.0 (compatible; olpark-live-log; +https://github.com/kjinwater1-crypto/olpark)'})
-        html = urllib.request.urlopen(req, timeout=40).read().decode('utf-8', 'replace')
+        UA = {'User-Agent': 'Mozilla/5.0 (compatible; olpark-live-log; +https://github.com/kjinwater1-crypto/olpark)'}
+        get = lambda data=None: urllib.request.urlopen(urllib.request.Request(URL, data=data, headers=UA), timeout=40).read().decode('utf-8', 'replace')
+        html = get()
         n, cap, slots = parse(html)
+        for d in re.findall(r'<option value="(\d{4}-\d{2}-\d{2})"', html)[1:]:   # the other weekend day(s) of the selector
+            try:
+                slots += parse(get(urllib.parse.urlencode({'selectdate': d}).encode()))[2]
+            except Exception as e:
+                append('errors.csv', ['ts_kst', 'error'], [[now, f'selectdate {d}: ' + repr(e)[:200]]])
         snip = os.path.join(OUT, 'form_snippet.html')     # the date selector of the expected-utilisation table (kept once)
         if not os.path.exists(snip):
             i = html.find('<select')
