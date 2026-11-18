@@ -42,10 +42,6 @@ if __name__ == '__main__':
                 slots += parse(get(urllib.parse.urlencode({'selectdate': d}).encode()))[2]
             except Exception as e:
                 append('errors.csv', ['ts_kst', 'error'], [[now, f'selectdate {d}: ' + repr(e)[:200]]])
-        snip = os.path.join(OUT, 'form_snippet.html')     # the date selector of the expected-utilisation table (kept once)
-        if not os.path.exists(snip):
-            i = html.find('<select')
-            open(snip, 'w', encoding='utf-8').write(html[max(0, html.rfind('<form', 0, i)):i + 1500] if i >= 0 else 'no select')
         append('rt_log.csv', ['ts_kst', 'parking_now', 'cap_label'], [[now, n, cap]])
         path, last = os.path.join(OUT, 'official_expect.csv'), {}
         if os.path.exists(path):
