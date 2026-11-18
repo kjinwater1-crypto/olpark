@@ -24,6 +24,9 @@ def parse(html):
         raise ValueError('live count not found: ' + text[:200])
     n, cap = (int(g.replace(',', '')) for g in m.groups())
     slots = [(f'{d} {t}', int(p)) for d, t, p in re.findall(r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})(?::\d{2})?\s*\|?\s*(\d{1,3})\s*%', text)]
+    if not slots:                              # keep a short excerpt of the expected-utilisation part to check the page layout
+        i = max(text.find('예상 이용률'), text.find('이용률'), 0)
+        open(os.path.join(OUT, 'page_excerpt.txt'), 'w', encoding='utf-8').write(text[max(0, i - 1500):i + 2500])
     return n, cap, slots
 
 
