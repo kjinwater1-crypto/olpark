@@ -67,7 +67,7 @@ for d, g in hr.groupby('date'):
         p, lo, hi = fc[MAIN]
         for x in g.itertuples():
             rows.append(dict(d=d, t=f'{x.h:02d}:00', raw=int(x.raw), api=int(round(x.raw - raw3 + p[3])), p=p[x.h], lo=lo[x.h], hi=hi[x.h], v=MAIN,
-                             s=int(H0 <= x.h <= H1)))
+                             s=int(H0 <= x.h <= H1), b=r0(fc['base'][0][x.h])))
         act = [x.raw - raw3 + p[3] for x in sc.itertuples()]
         dd = dict(d=d, act_max=r0(max(act)) if act else None,
                   ev=[dict(vn=e.get('vn'), t=e.get('t'), s=e.get('s')) for e in pubs[MAIN][d].get('ev', [])])
@@ -88,6 +88,9 @@ for d, g in hr.groupby('date'):
             npk, nhk = max(p[hh] for hh in hrs) * f, max(hi[hh] for hh in hrs) * f
             dd['noon'] = dict(ratio=round(ratio, 3), f=round(f, 3), p_max=r0(npk), alert='경보' if npk >= T else ('주의' if nhk >= T else ''),
                               act_max_pm=r0(max(x.raw - raw3 + p[3] for x in pm)) if pm else None)
+            for rw in rows:
+                if rw['d'] == d and int(rw['t'][:2]) >= NOON_H0:
+                    hh = int(rw['t'][:2]); rw.update(pn=r0(p[hh] * f), lon=r0(lo[hh] * f), hin=r0(hi[hh] * f))
         days.append(dd)
 
 P = pd.DataFrame(per)
@@ -131,9 +134,9 @@ if MAIN in summ['metrics'] and days:
         diff = (mm['mae'] - bb['mae']) / bb['mae'] * 100
         cmp = '와 비슷했고' if abs(diff) < 5 else (f'보다 {r0(-diff)}% 작았고' if diff < 0 else f'보다 {r0(diff)}% 컸고')
         cmp_short = '단순 기준과 비슷했지만' if abs(diff) < 5 else (f'단순 기준보다 {r0(-diff)}% 작았지만' if diff < 0 else f'단순 기준보다 {r0(diff)}% 컸고')
-        s1 = f"{span} {len(days)}일의 10~22시를 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대로 공연 정보를 쓰지 않는 단순 기준 {fmt(bb['mae'])}대{cmp}, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
+        s1 = f"{span}을 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대로 단순 기준 {fmt(bb['mae'])}대{cmp}, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
     else:
-        s1 = f"{span} {len(days)}일의 10~22시를 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대이고, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
+        s1 = f"{span}을 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대이고, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
     al = [e for e in days if e.get(MAIN, {}).get('alert')]
     hit = [e for e in al if e['act_max'] is not None and e['act_max'] >= T]
     miss = [e for e in days if not e.get(MAIN, {}).get('alert') and e['act_max'] is not None and e['act_max'] >= T]

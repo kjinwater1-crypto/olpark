@@ -152,7 +152,7 @@ for r in (ag.itertuples() if has_ag else []):
 meta_now = json.load(open(D + 'final_meta.json'))
 fieldcheck = json.load(open(D + 'field_check.json', encoding='utf-8')) if os.path.exists(D + 'field_check.json') else None   # 22_field_check.py
 live2 = json.load(open(D + 'live_prereg.json', encoding='utf-8')) if os.path.exists(D + 'live_prereg.json') else []   # published forecast vs live API
-live2_summary = json.load(open(D + 'live_prereg_summary.json', encoding='utf-8')).get('metrics') if os.path.exists(D + 'live_prereg_summary.json') else None
+live2_summary = json.load(open(D + 'live_prereg_summary.json', encoding='utf-8')) if os.path.exists(D + 'live_prereg_summary.json') else None   # metrics, by day and group, sentences, noon update
 app = dict(cap=CAP, generated=TODAY, first_pub='2026-11-15', view=os.environ.get('OLPARK_VIEW', 'all'), data_end=meta_now.get('data_end'), growth=round(meta_now.get('growth_now', 1.0), 3), sched_horizon=sched_horizon, days=days, resp_aud=resp_meta, queue=queue,
            hold=hold, hold_week=hold_week, metrics=rep, history=history, live=live_rows, agency=agency, fieldcheck=fieldcheck, live2=live2, live2_summary=live2_summary,
            same_alarm=json.load(open(D + 'robustness.json'))['same_alarm_days'], demo=json.load(open(D + 'robustness.json'))['full_demo'],

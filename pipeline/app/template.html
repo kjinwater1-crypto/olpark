@@ -506,9 +506,12 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-betw
         <span class="lg"><span class="sw" style="background:var(--ink);border-radius:50%"></span>실시간 주차 대수, 새벽 기준 보정</span>
         <span class="lg"><span class="lk" style="background:var(--s1)"></span>공개한 예보</span>
         <span class="lg"><span class="lb"></span>예측 범위</span>
+        <span class="lg"><span class="lk" style="background:var(--ink-2);opacity:.6"></span>단순 기준, 점선</span>
+        <span class="lg" id="live2NoonLg" hidden><span class="lk" style="background:var(--ink)"></span>정오 보정, 점선</span>
       </div>
       <details class="tv"><summary>표로 보기</summary><div class="tbl" id="live2Table" tabindex="0" role="region" aria-label="공개해 둔 예보와 실제 표"></div></details>
       <div id="live2Sum"></div>
+      <div id="live2Days"></div>
       <!-- 650 and 949: /home/claude/ksponco/data/live_baseline_note.json (diff_min 655, typical_20h 949, 2026-11-18 20시 실시간 기록) -->
       <p class="foot">실시간 주차 대수에는 출차 기록이 없는 장기 주차 차량이 남아 실제보다 많게 표시됩니다. 공연이 없는 11월 18일 수요일 20시 무렵에는 2025년 가을 같은 시각 평균보다 650대 넘게 많았습니다. 실시간 값은 20분마다 자동으로 기록합니다. <a href="https://github.com/kjinwater1-crypto/olpark/blob/main/live/SCORING.md" target="_blank" rel="noopener">채점 규칙</a>, <a href="https://github.com/kjinwater1-crypto/olpark/tree/live" target="_blank" rel="noopener">기록 보기</a></p>
     </div>
@@ -584,6 +587,10 @@ const SHOW_LEN = Q.show_len_min || 180;     // 공연 길이 가정 (분)
 const CLR = wk => (wk && Q.clear_p50_wk ? { p50: Q.clear_p50_wk, p75: Q.clear_p75_wk, n: Q.clear_n_wk, wk: true } : { p50: Q.clear_p50, p75: Q.clear_p75, n: Q.clear_n, wk: false });
 const FIRST_PUB = A.first_pub || '2026-11-15';   // 예보를 처음 공개한 날. 이보다 앞선 날짜는 지난 뒤에 계산한 값
 const PUBLIC = A.view === 'public';              // 공개용 빌드: 운영자 화면을 숨김
+// 정오 보정 (live/SCORING.md 2026-11-23 보충 규칙): 오늘 10~11시 실시간 값과 예보의 비율 r로 12시 이후 예보와 범위에 1 + 0.5(r - 1)을 곱함
+const NOONR = { hrs: [10, 11], w: 0.5, lo: 0.6, hi: 1.4, from: 12 };
+const LIVE_LOG = 'https://raw.githubusercontent.com/kjinwater1-crypto/olpark/live/rt_log.csv';
+let LIVE = null;                                  // { d, act: {시: 새벽 3시대 기준으로 맞춘 실시간 값}, f, r }
 // 공연 일정 원천 레코드 수: app_data에 없어 상수로 둠. 출처 /home/claude/ksponco/data/events_ksponco.json 510건 (2026-11-18 확인)
 const N_EVENTS = A.n_events || 510;
 const r10 = m => Math.round(m / 10) * 10;        // 방문객에게 보이는 출차 시각은 10분 단위
@@ -803,7 +810,9 @@ function lineChart(el, cfg) {
       else d += (pen ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1);
       pen = true;
     }
-    S('path', { d: d, fill: 'none', stroke: s.c, 'stroke-width': s.w || 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity: s.o || 1 }, g);
+    const at = { d: d, fill: 'none', stroke: s.c, 'stroke-width': s.w || 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity: s.o || 1 };
+    if (s.dash) at['stroke-dasharray'] = s.dash;
+    S('path', at, g);
   });
   (cfg.dots || []).forEach(p => S('circle', { cx: x(p.i), cy: y(p.v), r: p.r || 4, fill: p.c, stroke: 'var(--surface)', 'stroke-width': 1.5, opacity: p.o == null ? 1 : p.o }, g));
   // threshold names go on top of the lines, with a halo, so a series never hides them
@@ -964,6 +973,7 @@ function renderSign(d, s, x) {
   if (!al.hidden && x && x.u) al.textContent += ' 공연 시작 시각이 정해지면 바뀔 수 있어요.';
   const rows = [];
   if (isToday && NOW.hour >= H0 && NOW.hour <= H1) { const v = d.p[NOW.hour]; rows.push(['지금', fmt(v) + '대 예상', pct(v) + '% ' + LV[lvOf(v)].n]); }
+  if (isToday && LIVE && LIVE.d === d.d && LIVE.f != null) { const ch = Math.round((LIVE.f - 1) * 100); rows.push(['정오 보정', ch === 0 ? '오후 예보 그대로' : '12시부터 예보 ' + Math.abs(ch) + '% ' + (ch < 0 ? '낮춤' : '높임'), '10~11시 실측이 예보의 ' + Math.round(LIVE.r * 100) + '%였어요']); }
   if (isPast) rows.push(['도착', win ? win[0] + '시 전' : '시간 제약 없음', win ? '예보로 본 도착 권장 시각이에요' : '예보로는 주차가 여유로운 날이었어요']);
   else if (hp.wkBig) rows.push(isToday && NOWMIN >= toMin(x.ref.s) ? ['도착', '공연 시작 뒤', '주차 자리는 여유 있는 편이에요'] : ['도착', '공연 2시간 전까지', '오면 수월해요']);
   else if (isToday && win && NOW.hour > win[1]) rows.push(['도착', '혼잡 시간 지남', '지금은 여유 있게 주차할 수 있어요']);
@@ -1014,6 +1024,12 @@ function drawDay(el, d) {
     if (h % 3 === 0) T(g, xc(i), H - m.b + 17, h + '시', { class: 'tick', 'text-anchor': 'middle' });
   });
   thr.forEach(t => T(g, thrX, y(CAP * t[0]) - 5, t[1], { class: 'lab halo' }));
+  // today: the live count aligned on its 3 h reading, and the morning forecast where the noon update changed it
+  const LD = (LIVE && inRange && state.sel === TODAY && LIVE.d === d.d) ? LIVE : null;
+  if (LD) {
+    if (LD.f != null) HRS.forEach((h, i) => { if (h < NOONR.from) return; const x0 = xc(i) - barW / 2; S('path', { d: roundTopBar(x0, x0 + barW, y(d.p0[h]), y(0), 4), fill: 'none', stroke: 'var(--ink)', 'stroke-width': 1.2, 'stroke-dasharray': '3 2', opacity: 0.7 }, g); });
+    HRS.forEach((h, i) => { const v = LD.act[h]; if (v == null) return; S('circle', { cx: xc(i), cy: y(Math.max(0, v)), r: 3.6, fill: 'var(--ink)', stroke: 'var(--surface)', 'stroke-width': 1.5 }, g); });
+  }
   // event start markers: labels on the top row, triangles below them, the 'now' label on its own row, so nothing has to be hidden
   const xOf = t => m.l + ((toMin(t) / 60) - H0) * bw;
   const uSet = new Set(d.ev.filter(e => e.u).map(e => e.s));
@@ -1036,9 +1052,9 @@ function drawDay(el, d) {
     bars.forEach((b, k) => b.setAttribute('opacity', k === i ? 1 : 0.55));
     const h = HRS[i], v = d.p[h];
     tipShow(tip, h + '시', [
-      { v: fmt(v) + '대', k: pct(v) + '% ' + LV[lvOf(v)].n, c: LV[lvOf(v)].c, sq: true },
+      { v: fmt(v) + '대', k: pct(v) + '% ' + LV[lvOf(v)].n + (LD && LD.f != null && h >= NOONR.from ? ', 정오 보정' : ''), c: LV[lvOf(v)].c, sq: true },
       { v: fmt(d.lo[h]) + '~' + fmt(d.hi[h]) + '대', k: '예측 범위' }
-    ], xc(i), m.t, w);
+    ].concat(LD && LD.f != null && h >= NOONR.from ? [{ v: fmt(d.p0[h]) + '대', k: '아침 예보' }] : []).concat(LD && LD.act[h] != null ? [{ v: fmt(LD.act[h]) + '대', k: '실시간, 새벽 기준 보정', c: 'var(--ink)' }] : []), xc(i), m.t, w);
     el._hi = i;
   };
   const hide = () => { bars.forEach(b => b.setAttribute('opacity', 1)); tip.hidden = true; el._hi = null; };
@@ -1132,6 +1148,8 @@ function renderVisitor() {
   const d = A.days[state.sel], s = summ(d), x = exitInfo(d);
   renderSign(d, s, x);
   drawDay($('#dayChart'), d);
+  const LD = (LIVE && inRange && state.sel === TODAY && LIVE.d === d.d) ? LIVE : null;
+  $('#dayDesc').textContent = DAY_DESC + (LD ? (LD.f != null ? ' 오늘 12시 이후는 10~11시 실시간 값으로 고친 정오 보정 예보이고, 점선 막대는 아침 예보, 점은 새벽 기준으로 맞춘 실시간 주차 대수입니다.' : ' 점은 새벽 기준으로 맞춘 오늘의 실시간 주차 대수이며, 정오에 10~11시 값으로 오후 예보를 고칩니다.') : '');
   renderDayTable(d);
   renderEvents(d);
   renderExit(d, x);
@@ -1181,7 +1199,8 @@ function renderOperator() {
   $('#opHead').textContent = ENDED ? '예보 기간이 지났어요' : warn.length ? '혼잡 경보 ' + warn.length + '일' + (caution.length ? ', 주의 ' + caution.length + '일' : '') : caution.length ? '혼잡 주의 ' + caution.length + '일' : xq.length ? '출구 혼잡 ' + xq.length + '일' : per + '간 경보 없음';
   const sub = $('#opSub'); sub.replaceChildren(lvChip(top.s.lv)); sub.appendChild(document.createTextNode((rows.length > 1 ? per + ' 중 가장 붐비는 날 ' : '') + dLabel(top.d, true) + ', 최대 ' + fmt(top.s.pk) + '대 (' + pct(top.s.pk) + '%)'));
   const list = (rs, f) => rs.length ? rs.map(r => dLabel(r.d, true) + (f ? ' ' + f(r) : '')).join(', ') : '없음';
-  setRows($('#opRows'), [
+  const tdy = A.days[TODAY], nr = (LIVE && inRange && LIVE.d === tdy.d && LIVE.f != null) ? [['정오 보정', '오늘 12시부터 예보 ' + (Math.round((LIVE.f - 1) * 100) === 0 ? '그대로' : Math.abs(Math.round((LIVE.f - 1) * 100)) + '% ' + (LIVE.f < 1 ? '낮춤' : '높임')) + ', 10~11시 실측이 예보의 ' + Math.round(LIVE.r * 100) + '%']] : [];
+  setRows($('#opRows'), nr.concat([
     ['경보일', list(warn)],
     ['주의일', list(caution)],
     ['매우 혼잡 가능', list(sev, r => r.s.h90[0] + '시부터')],
@@ -1189,7 +1208,7 @@ function renderOperator() {
     ['출구 인력', '동2, 북2 방향 차량 남2문 유도'],
     ['대응 단계', '경보일과 주의일 모두 인력과 안내 준비, 주의일은 당일 아침 예보 재확인'],
     ['대형 공연일', '관객 8,000명 이상이면 등급과 관계없이 입차와 출구 유도 인력 기본 배치']
-  ]);
+  ]));
   const exw = r => (r.x && r.x.has) ? hhmm(r.x.from) + '~' + hhmm(r.x.late || r.x.to) : null;   // staff stay until the late clearing time
   const tb = rows.map(r => {
     const a = r.a, xw = exw(r), gate = xw ? xw + ' 동2, 북2 방향 차량 남2문 유도' : null;
@@ -1508,8 +1527,10 @@ function renderLive2() {
   const inR = r => r.api >= r.lo && r.api <= r.hi;
   const inn = scored.filter(inR).length, days = [...new Set(scored.map(r => r.d))];
   const used = [...new Set(rows.map(r => r.v || 'v1'))].sort().map(v => LIVE_VER[v] || v);
-  $('#live2Desc').textContent = '11월 18일 22시 저장소에 공개한 채점 규칙대로, 공연 전에 공개한 예보를 홈페이지 실시간 주차 대수와 맞춰 봅니다. 실시간 값에는 출차 기록이 없는 장기 주차 차량이 남아 그날 새벽 3시 무렵 값을 기준으로 맞춥니다. '
-    + (scored.length ? '채점 대상 ' + days.length + '일 ' + scored.length + '회 가운데 ' + inn + '회, ' + Math.round(inn / scored.length * 100) + '%가 예측 범위 안에 들었습니다.' : '아직 채점 대상 시각의 기록이 없습니다.') + ' 비교한 예보는 ' + used.join(', ') + '입니다.';
+  const SM = A.live2_summary && A.live2_summary.metrics ? A.live2_summary : null;
+  $('#live2Desc').textContent = '11월 18일 22시 저장소에 공개한 채점 규칙대로, 공연 전에 공개한 예보를 홈페이지 실시간 주차 대수와 맞춰 봅니다. 실시간 값에는 출차 기록이 없는 장기 주차 차량이 남아 그날 새벽 3시 무렵 값을 기준으로 맞추고, 단순 기준은 공연 정보 없이 2025년 하반기 같은 요일 유형과 시각의 평균입니다. '
+    + (SM && SM.sentence ? SM.sentence : (scored.length ? '채점 대상 ' + days.length + '일 ' + scored.length + '회 가운데 ' + inn + '회, ' + Math.round(inn / scored.length * 100) + '%가 예측 범위 안에 들었습니다.' : '아직 채점 대상 시각의 기록이 없습니다.'))
+    + ' 그래프의 예보는 ' + used.join(', ') + '입니다.' + (SM && SM.noon ? '' : ' 11월 24일부터는 정오의 실시간 값으로 오후 예보를 고친 정오 보정도 함께 채점합니다.');
   const lab = r => { const [, m, d] = ymdParts(r.d); return m + '/' + d + ' ' + r.t; };
   const ymax = niceMax(Math.max.apply(null, rows.map(r => Math.max(r.hi, r.api, r.p))) + 100, 500);
   const ymin = Math.max(0, Math.floor((Math.min.apply(null, rows.map(r => Math.min(r.lo, r.api, r.p))) - 100) / 500) * 500);
@@ -1519,12 +1540,16 @@ function renderLive2() {
   lineChart(el, {
     H: 220, n: n, ymin: ymin, ymax: ymax, yticks: yt, yfmt: v => fmt(v), m: { l: 48, r: 18 }, xgrid: firsts.filter(i => i > 0).map(i => i - 0.5),
     band: { lo: rows.map(r => r.lo), hi: rows.map(r => r.hi) },
-    series: [{ vals: rows.map(r => r.p), c: 'var(--s1)', w: 2 }],
+    series: [{ vals: rows.map(r => r.p), c: 'var(--s1)', w: 2 }]
+      .concat(rows.some(r => r.b != null) ? [{ vals: rows.map(r => r.b), c: 'var(--ink-2)', w: 1.4, o: 0.6, dash: '4 3' }] : [])
+      .concat(rows.some(r => r.pn != null) ? [{ vals: rows.map(r => (r.pn != null ? r.pn : null)), c: 'var(--ink)', w: 1.6, dash: '2 2' }] : []),
     dots: rows.map((r, i) => ({ i, v: r.api, c: 'var(--ink)', o: +r.s === 1 ? 1 : 0.35 })),
     xticks: firsts.map(i => { const [, mm, dd] = ymdParts(rows[i].d); return [i, mm + '/' + dd + ' ' + WDS[dowSun(rows[i].d)], 'start']; }),
     tipTitle: i => lab(rows[i]) + (+rows[i].s === 1 ? '' : ', 채점 제외'),
     tipRows: i => [{ v: fmt(rows[i].api) + '대', k: '실시간, 새벽 기준 보정', c: 'var(--ink)' }, { v: fmt(rows[i].p) + '대', k: LIVE_VER_S[rows[i].v || 'v1'] ? LIVE_VER_S[rows[i].v || 'v1'] + ' 공개 예보' : '공개한 예보', c: 'var(--s1)' }, { v: fmt(rows[i].lo) + '~' + fmt(rows[i].hi) + '대', k: '예측 범위' }]
+      .concat(rows[i].b != null ? [{ v: fmt(rows[i].b) + '대', k: '단순 기준' }] : []).concat(rows[i].pn != null ? [{ v: fmt(rows[i].pn) + '대', k: '정오 보정' }] : [])
   });
+  $('#live2NoonLg').hidden = !rows.some(r => r.pn != null);
   const hasRaw = rows.some(r => r.raw != null);
   $('#live2Table').innerHTML = '<table><thead><tr><th>날짜</th><th>시각</th><th>공개판</th>' + (hasRaw ? '<th class="num">실시간 원값</th>' : '') + '<th class="num">보정값</th><th class="num">공개한 예보</th><th class="num">예측 범위</th></tr></thead><tbody>' + rows.map(r => { const [, m, d] = ymdParts(r.d); return '<tr><td>' + m + '/' + d + ' ' + WDS[dowSun(r.d)] + '</td><td>' + r.t + '</td><td>' + (LIVE_VER_S[r.v || 'v1'] || r.v) + '</td>' + (hasRaw ? '<td class="num">' + (r.raw != null ? fmt(r.raw) : '') + '</td>' : '') + '<td class="num">' + fmt(r.api) + '</td><td class="num">' + fmt(r.p) + '</td><td class="num">' + fmt(r.lo) + '~' + fmt(r.hi) + (+r.s === 1 ? (inR(r) ? ' ✓' : '') : ' 제외') + '</td></tr>'; }).join('') + '</tbody></table><p class="note">단위는 대입니다. 보정값은 실시간 원값에서 그날 새벽 3시 무렵 값을 빼고 공개 예보의 새벽 3시 값을 더한 것이고, ✓는 보정값이 예측 범위 안이라는 뜻입니다. 채점은 10~22시 기록만 합니다.</p>';
   // summary by published version, when the data carry it
@@ -1534,7 +1559,21 @@ function renderLive2() {
   if (keys.length) {
     const pc = v => (v == null ? '' : Math.round(v <= 1 ? v * 100 : v) + '%'), sg = v => (v == null ? '' : (v > 0 ? '+' : '') + fmt(v) + '대');
     sumEl.className = 'tbl'; sumEl.style.marginTop = '12px';
-    sumEl.innerHTML = '<table><thead><tr><th>예보</th><th class="num">평균 오차</th><th class="num">치우침</th><th class="num">범위 안</th></tr></thead><tbody>' + keys.map(k => '<tr><td>' + (k === 'base' ? '비교 기준' : LIVE_VER[k]) + '</td><td class="num">' + (S[k].mae == null ? '' : fmt(S[k].mae) + '대') + '</td><td class="num">' + sg(S[k].bias) + '</td><td class="num">' + pc(S[k].coverage) + '</td></tr>').join('') + '</tbody></table>';
+    const NO = SM && SM.noon && SM.noon.metrics, nrow = (lab, m) => '<tr><td>' + lab + '</td><td class="num">' + fmt(m.mae) + '대</td><td class="num">' + sg(m.bias) + '</td><td class="num">' + pc(m.coverage) + '</td></tr>';
+    sumEl.innerHTML = '<table><thead><tr><th>예보, 10~22시</th><th class="num">평균 오차</th><th class="num">치우침</th><th class="num">범위 안</th></tr></thead><tbody>' + keys.map(k => '<tr><td>' + (k === 'base' ? '단순 기준' : LIVE_VER[k]) + (k === 'v3' ? ', 주 결과' : '') + '</td><td class="num">' + (S[k].mae == null ? '' : fmt(S[k].mae) + '대') + '</td><td class="num">' + sg(S[k].bias) + '</td><td class="num">' + pc(S[k].coverage) + '</td></tr>').join('')
+      + (NO && NO.noon && NO.v3 ? nrow('정오 보정, 12~22시', NO.noon) + nrow('같은 시각의 ' + LIVE_VER.v3, NO.v3) : '') + '</tbody></table><p class="note">치우침이 +면 예보가 실제보다 높았다는 뜻입니다.</p>';
+  }
+  // day by day: the alert the main version gave and the day's highest live value
+  const dEl = $('#live2Days'), DS = SM && SM.days ? SM.days.filter(e => e.act_max != null) : [];
+  dEl.replaceChildren();
+  if (DS.length) {
+    const T70 = Math.round(CAP * 0.7), mainK = SM.main || 'v3';
+    const res = e => { const a = (e[mainK] || {}).alert, over = e.act_max >= T70; return a ? (over ? '맞음' : '빗나감, 실제 혼잡 아님') : (over ? '놓침, 실제 혼잡' : '맞음'); };
+    const evName = e => (e.ev && e.ev.length ? e.ev.map(v => (v.vn || '') + ' ' + (v.s || '')).join(', ') : '없음');
+    dEl.className = 'tbl'; dEl.style.marginTop = '12px';
+    dEl.innerHTML = '<table><thead><tr><th>날짜</th><th>공연</th><th>알림</th><th class="num">예보 최대</th><th class="num">실측 최대</th>' + (DS.some(e => e.noon) ? '<th>정오 보정 알림</th>' : '') + '<th>결과</th></tr></thead><tbody>'
+      + DS.map(e => { const [, m, d] = ymdParts(e.d), a = (e[mainK] || {}); return '<tr><td>' + m + '/' + d + ' ' + WDS[dowSun(e.d)] + '</td><td>' + evName(e) + '</td><td>' + (a.alert ? '혼잡 ' + a.alert : '없음') + '</td><td class="num">' + fmt(a.p_max) + '</td><td class="num">' + fmt(e.act_max) + '</td>' + (DS.some(x => x.noon) ? '<td>' + (e.noon ? (e.noon.alert ? '혼잡 ' + e.noon.alert : '없음') : '') + '</td>' : '') + '<td>' + res(e) + '</td></tr>'; }).join('')
+      + '</tbody></table><p class="note">알림은 ' + LIVE_VER[mainK] + ' 기준이고, 실측 최대는 그날 10~22시 보정값의 최댓값입니다. 혼잡 기준은 ' + fmt(T70) + '대입니다.</p>';
   }
 }
 function drawHeat(el) {
@@ -1641,7 +1680,8 @@ $('#calDesc').textContent += ' 4개월 앞까지 예보하고 공연은 공개�
 if (A.sched_horizon) { const [, hm, hd] = ymdParts(A.sched_horizon); $('#calDesc').textContent += ' ' + hm + '월 ' + hd + '일 이후는 공연 일정이 아직 거의 등록되지 않아 평소 수준으로 보이며, 공연이 등록되면 예보가 바뀝니다.'; }
 // how often the actual value fell inside the range: operating condition (validation) and the demo condition shown now
 const covSent = '운영 조건 검증에서는 실제 값의 ' + Math.round(A.metrics.band_coverage) + '%' + (A.demo && A.demo.coverage != null ? ', 지금 화면과 같은 시연 조건에서는 ' + (Number.isInteger(A.demo.coverage) ? A.demo.coverage : A.demo.coverage.toFixed(1)) + '%' : '') + '가 이 범위 안에 들었습니다.';
-$('#dayDesc').textContent = '막대는 예상치, 가는 세로선은 실제 값이 들어올 범위입니다. ' + covSent;
+const DAY_DESC = '막대는 예상치, 가는 세로선은 실제 값이 들어올 범위입니다. ' + covSent;
+$('#dayDesc').textContent = DAY_DESC;
 document.querySelectorAll('.covSent').forEach(e => { e.textContent = covSent; });
 $('#pctNote').textContent = '%는 기준 수용량 ' + fmt(CAP) + '대 대비 예상 최대입니다.';
 $('#genNote').textContent = '공개 데이터로 만든 시연판, 예보 생성 ' + A.generated + '. 운영 시 매일 갱신하고 실시간 주차현황과 대조';
@@ -1652,6 +1692,32 @@ if (inRange && NOW.hour >= 22 && TODAY + 1 < A.days.length) {
 }
 state.sel = DEF;
 initWhatIf(); initQueue();
+// 정오 보정: 저장소 live 브랜치의 실시간 기록에서 오늘 3시대와 10~11시 값을 읽어 12시 이후 예보를 고칩니다. 기록을 못 받으면 아침 예보 그대로입니다.
+function applyNoon(txt) {
+  const d = A.days[TODAY], mx = {};
+  txt.split('\n').forEach(line => {
+    const c = line.split(',');
+    if (c.length < 2 || c[0].slice(0, 10) !== d.d) return;
+    const h = +c[0].slice(11, 13), v = +c[1];
+    if (!Number.isFinite(h) || !Number.isFinite(v)) return;
+    mx[h] = mx[h] == null ? v : Math.max(mx[h], v);
+  });
+  if (mx[3] == null) return false;
+  const act = {};
+  Object.keys(mx).forEach(h => { if (+h >= H0 && +h <= NOW.hour) act[+h] = mx[h] - mx[3] + d.p[3]; });
+  LIVE = { d: d.d, act: act, f: null, r: null };
+  if (NOW.hour >= NOONR.from && NOONR.hrs.every(h => mx[h] != null)) {
+    const r = NOONR.hrs.reduce((a, h) => a + mx[h] - mx[3] + d.p[3], 0) / NOONR.hrs.reduce((a, h) => a + d.p[h], 0);
+    const f = Math.min(NOONR.hi, Math.max(NOONR.lo, 1 + NOONR.w * (r - 1)));
+    d.p0 = d.p.slice(); d.lo0 = d.lo.slice(); d.hi0 = d.hi.slice();
+    for (let h = NOONR.from; h < 24; h++) { d.p[h] *= f; d.lo[h] *= f; d.hi[h] *= f; }
+    LIVE.f = f; LIVE.r = r;
+  }
+  return true;
+}
+if (inRange && !ENDED && NOW.hour >= 4 && typeof fetch === 'function') {
+  fetch(LIVE_LOG, { cache: 'no-store' }).then(r => (r.ok ? r.text() : '')).then(t => { if (t && applyNoon(t)) go(state.view, true); }).catch(() => { /* 기록을 받지 못하면 아침 예보를 그대로 씁니다 */ });
+}
 window.addEventListener('hashchange', applyHash);
 let lastW = window.innerWidth, rt = null;
 window.addEventListener('resize', () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(rt); rt = setTimeout(() => go(state.view, true), 150); });
