@@ -122,6 +122,11 @@ def and_days(ds):
     out = [md(d, i == 0 or ds[i - 1][5:7] != d[5:7]) for i, d in enumerate(ds)]
     return out[0] if len(out) == 1 else ', '.join(out[:-1]) + '과 ' + out[-1]
 
+def ndays(n, topic=True):
+    """하루는, 이틀은, 사흘은, 나흘은, 5일은 (topic=False: no particle)"""
+    w = {1: '하루', 2: '이틀', 3: '사흘', 4: '나흘'}.get(n, f'{n}일')
+    return w + (('는' if n == 1 else '은') if topic else '')
+
 def and_nums(vs):
     out = [f'{fmt(v)}대' for v in vs]
     return out[0] if len(out) == 1 else ', '.join(out[:-1]) + '와 ' + out[-1]
@@ -150,7 +155,7 @@ if MAIN in summ['metrics'] and days:
         if calm and cb:
             better = calm['mae'] < cb['mae'] * 0.95
             cmpc = '보다 작았' if better else ('와 비슷했' if calm['mae'] <= cb['mae'] * 1.05 else '보다 컸')
-            lead = (f"알림이 없던 {summ['by_group']['calm']['n_days']}일은 평균 오차가 {fmt(calm['mae'])}대로 단순 기준 {fmt(cb['mae'])}대{cmpc}"
+            lead = (f"알림이 없던 {ndays(summ['by_group']['calm']['n_days'])} 평균 오차가 {fmt(calm['mae'])}대로 단순 기준 {fmt(cb['mae'])}대{cmpc}"
                     + ('지만, ' if better and not hit else '고, '))
         if not hit and len(al) <= 3:
             over = [r0(e[MAIN]['p_max'] - e['act_max']) for e in al]
@@ -165,7 +170,7 @@ if MAIN in summ['metrics'] and days:
     # short form for the one-page summary
     if al and not hit and bb:
         summ['sentence_short'] = (f"{span} 채점에서 셋째 판의 평균 오차는 {fmt(mm['mae'])}대로 {cmp_short}, "
-                                  f"{kind}를 낸 공연일 {len(al)}일은 실측이 혼잡 기준에 못 미쳐 정점을 높게 봤습니다.")
+                                  f"{kind}를 낸 공연일 {ndays(len(al))} 실측이 혼잡 기준에 못 미쳐 정점을 높게 봤습니다.")
     else:
         summ['sentence_short'] = (f"{span} 채점에서 셋째 판의 평균 오차는 {fmt(mm['mae'])}대이고, 경보나 주의를 낸 {len(al)}일 가운데 {len(hit)}일이 실제로 혼잡 기준을 넘었습니다.")
     summ['scored_through'] = d1
