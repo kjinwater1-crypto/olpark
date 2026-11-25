@@ -136,10 +136,10 @@ if MAIN in summ['metrics'] and days:
     d0, d1 = days[0]['d'], days[-1]['d']
     span = f'{int(d0[5:7])}월 {int(d0[8:10])}~{int(d1[8:10])}일' if d0[5:7] == d1[5:7] else f'{md(d0)}~{md(d1)}'
     if bb:
-        diff = (mm['mae'] - bb['mae']) / bb['mae'] * 100
+        diff = (r0(mm['mae']) - r0(bb['mae'])) / r0(bb['mae']) * 100     # from the rounded values the sentence shows
         cmp = '와 비슷했고' if abs(diff) < 5 else (f'보다 {r0(-diff)}% 작았고' if diff < 0 else f'보다 {r0(diff)}% 컸고')
-        cmp_short = '단순 기준과 비슷했지만' if abs(diff) < 5 else (f'단순 기준보다 {r0(-diff)}% 작았지만' if diff < 0 else f'단순 기준보다 {r0(diff)}% 컸고')
-        s1 = f"{span}을 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대로 단순 기준 {fmt(bb['mae'])}대{cmp}, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
+        cmp_short = '공연 정보 없는 요일 평균과 비슷했지만' if abs(diff) < 5 else (f'공연 정보 없는 요일 평균보다 {r0(-diff)}% 작았지만' if diff < 0 else f'공연 정보 없는 요일 평균보다 {r0(diff)}% 컸고')
+        s1 = f"{span}을 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대로 공연 정보 없는 요일 평균인 단순 기준 {fmt(bb['mae'])}대{cmp}, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
     else:
         s1 = f"{span}을 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대이고, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
     al = [e for e in days if e.get(MAIN, {}).get('alert')]
