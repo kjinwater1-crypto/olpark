@@ -107,8 +107,16 @@ if len(P):
 if per_noon:
     Q = pd.DataFrame(per_noon)
     nd = [e for e in days if 'noon' in e]
+    for e in nd:
+        q = Q[Q.d == e['d']]
+        e['noon'].update(mae=round(float((q[q.k == 'noon'].adj - q[q.k == 'noon'].p).abs().mean()), 1),
+                         mae_v3=round(float((q[q.k == MAIN].adj - q[q.k == MAIN].p).abs().mean()), 1))
+    show = [e['d'] for e in nd if e.get('ev')]
     summ['noon'] = dict(rule='live/SCORING.md, 2026-11-23 보충 채점', since=NOON_FROM, hours=[NOON_H0, H1], n_days=int(Q.d.nunique()),
+                        last=nd[-1]['d'] if nd else None,
                         metrics={k: metrics(g.to_dict('records')) for k, g in Q.groupby('k', sort=False)},
+                        show_days=show,
+                        show_metrics={k: metrics(g.to_dict('records')) for k, g in Q[Q.d.isin(show)].groupby('k', sort=False)} if show else {},
                         hits=sum(1 for e in nd if e['noon']['alert'] and e['noon']['act_max_pm'] >= T),
                         alerts=sum(1 for e in nd if e['noon']['alert']),
                         actual=sum(1 for e in nd if e['noon']['act_max_pm'] is not None and e['noon']['act_max_pm'] >= T))
@@ -122,9 +130,11 @@ def and_days(ds):
     out = [md(d, i == 0 or ds[i - 1][5:7] != d[5:7]) for i, d in enumerate(ds)]
     return out[0] if len(out) == 1 else ', '.join(out[:-1]) + '과 ' + out[-1]
 
-def ndays(n, topic=True):
-    """하루는, 이틀은, 사흘은, 나흘은, 5일은 (topic=False: no particle)"""
+def ndays(n, topic=True, subj=False):
+    """하루는, 이틀은, 사흘은, 나흘은, 5일은 / subj=True: 하루가, 이틀이 / topic=False, subj=False: no particle"""
     w = {1: '하루', 2: '이틀', 3: '사흘', 4: '나흘'}.get(n, f'{n}일')
+    if subj:
+        return w + ('가' if n == 1 else '이')
     return w + (('는' if n == 1 else '은') if topic else '')
 
 def and_nums(vs):
@@ -135,44 +145,55 @@ if MAIN in summ['metrics'] and days:
     mm, bb = summ['metrics'][MAIN], summ['metrics'].get('base')
     d0, d1 = days[0]['d'], days[-1]['d']
     span = f'{int(d0[5:7])}월 {int(d0[8:10])}~{int(d1[8:10])}일' if d0[5:7] == d1[5:7] else f'{md(d0)}~{md(d1)}'
+    cmp_short = ''
     if bb:
         diff = (r0(mm['mae']) - r0(bb['mae'])) / r0(bb['mae']) * 100     # from the rounded values the sentence shows
         cmp = '와 비슷했고' if abs(diff) < 5 else (f'보다 {r0(-diff)}% 작았고' if diff < 0 else f'보다 {r0(diff)}% 컸고')
-        cmp_short = '공연 정보 없는 요일 평균과 비슷했지만' if abs(diff) < 5 else (f'공연 정보 없는 요일 평균보다 {r0(-diff)}% 작았지만' if diff < 0 else f'공연 정보 없는 요일 평균보다 {r0(diff)}% 컸고')
+        cmp_short = '공연 정보 없는 요일 평균과 비슷했' if abs(diff) < 5 else (f'공연 정보 없는 요일 평균보다 {r0(-diff)}% 작았' if diff < 0 else f'공연 정보 없는 요일 평균보다 {r0(diff)}% 컸')
         s1 = f"{span}을 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대로 공연 정보 없는 요일 평균인 단순 기준 {fmt(bb['mae'])}대{cmp}, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
     else:
         s1 = f"{span}을 채점하니 셋째 판의 평균 오차는 {fmt(mm['mae'])}대이고, 실측의 {r0(mm['coverage'])}%가 80% 범위 안에 들었습니다."
     al = [e for e in days if e.get(MAIN, {}).get('alert')]
     hit = [e for e in al if e['act_max'] is not None and e['act_max'] >= T]
+    nohit = [e for e in al if e not in hit]
     miss = [e for e in days if not e.get(MAIN, {}).get('alert') and e['act_max'] is not None and e['act_max'] >= T]
     kinds = sorted({e[MAIN]['alert'] for e in al}, key=['주의', '경보'].index)
     kind = '와 '.join(kinds) if len(kinds) == 2 else (kinds[0] if kinds else '')
     calm = summ['by_group'].get('calm', {}).get(MAIN)
-    s2 = ''
-    if al:
-        cb = summ['by_group'].get('calm', {}).get('base')
-        lead = ''
-        if calm and cb:
-            better = calm['mae'] < cb['mae'] * 0.95
-            cmpc = '보다 작았' if better else ('와 비슷했' if calm['mae'] <= cb['mae'] * 1.05 else '보다 컸')
-            lead = (f"알림이 없던 {ndays(summ['by_group']['calm']['n_days'])} 평균 오차가 {fmt(calm['mae'])}대로 단순 기준 {fmt(cb['mae'])}대{cmpc}"
-                    + ('지만, ' if better and not hit else '고, '))
-        if not hit and len(al) <= 3:
-            over = [r0(e[MAIN]['p_max'] - e['act_max']) for e in al]
-            s2 = (f"{lead}{kind}를 낸 {and_days([e['d'] for e in al])}은 실측 하루 최대가 {and_nums([e['act_max'] for e in al])}로 혼잡 기준 {T:,}대에 못 미쳐 "
-                  f"예보 정점이 {and_nums(over)} 높았습니다.")
-        elif len(hit) == len(al):
-            s2 = f"{lead}경보나 주의를 낸 {len(al)}일은 모두 실측 하루 최대가 혼잡 기준 {T:,}대를 넘었습니다."
-        else:
-            s2 = f"{lead}경보나 주의를 낸 {len(al)}일 가운데 {len(hit)}일은 실측 하루 최대가 혼잡 기준 {T:,}대를 넘었고 {len(al) - len(hit)}일은 못 미쳤습니다."
-    s3 = '알림 없이 혼잡 기준을 넘은 날은 없었습니다.' if not miss else f'알림 없이 혼잡 기준을 넘은 날이 {len(miss)}일 있었습니다.'
-    summ['sentence'] = ' '.join(x for x in (s1, s2, s3) if x)
-    # short form for the one-page summary
-    if al and not hit and bb:
-        summ['sentence_short'] = (f"{span} 채점에서 셋째 판의 평균 오차는 {fmt(mm['mae'])}대로 {cmp_short}, "
-                                  f"{kind}를 낸 공연일 {ndays(len(al))} 실측이 혼잡 기준에 못 미쳐 정점을 높게 봤습니다.")
+    cb = summ['by_group'].get('calm', {}).get('base')
+    parts = [s1]
+    if calm and cb and al:
+        better = calm['mae'] < cb['mae'] * 0.95
+        cmpc = '보다 작았' if better else ('와 비슷했' if calm['mae'] <= cb['mae'] * 1.05 else '보다 컸')
+        parts.append(f"알림이 없던 {ndays(summ['by_group']['calm']['n_days'])} 평균 오차가 {fmt(calm['mae'])}대로 단순 기준 {fmt(cb['mae'])}대{cmpc}습니다.")
+    if al and not hit:
+        over = [r0(e[MAIN]['p_max'] - e['act_max']) for e in al]
+        tail = f" 예보 정점이 {and_nums(over)} 높았습니다." if all(o > 0 for o in over) else '습니다.'
+        parts.append(f"{kind}를 낸 {and_days([e['d'] for e in al])}은 실측 하루 최대가 {and_nums([e['act_max'] for e in al])}로 혼잡 기준 {T:,}대에 못 미"
+                     + ('쳐' + tail if tail != '습니다.' else '쳤' + tail))
+    elif al and nohit:
+        parts.append(f"{kind}를 낸 공연일 {ndays(len(al), topic=False)} 가운데 {and_days([e['d'] for e in hit])}은 실측 하루 최대가 {and_nums([e['act_max'] for e in hit])}로 "
+                     f"혼잡 기준 {T:,}대를 넘었고, {and_days([e['d'] for e in nohit])}은 {and_nums([e['act_max'] for e in nohit])}로 못 미쳤습니다.")
+    elif al:
+        parts.append(f"{kind}를 낸 {and_days([e['d'] for e in al])}은 모두 실측 하루 최대가 {and_nums([e['act_max'] for e in al])}로 혼잡 기준 {T:,}대를 넘었습니다.")
+    if miss:
+        parts.append(f"알림 없이 혼잡 기준을 넘은 날은 {and_days([e['d'] for e in miss])}이었습니다." if len(miss) <= 2 else f"알림 없이 혼잡 기준을 넘은 날이 {len(miss)}일 있었습니다.")
     else:
-        summ['sentence_short'] = (f"{span} 채점에서 셋째 판의 평균 오차는 {fmt(mm['mae'])}대이고, 경보나 주의를 낸 {len(al)}일 가운데 {len(hit)}일이 실제로 혼잡 기준을 넘었습니다.")
+        parts.append('알림 없이 혼잡 기준을 넘은 날은 없었습니다.')
+    summ['sentence'] = ' '.join(parts)
+    # short form for the one-page summary
+    lead = f"{span} 채점에서 셋째 판의 평균 오차는 {fmt(mm['mae'])}대" + (f"로 {cmp_short}" if cmp_short else '였')
+    if al and not hit:
+        high = all(e[MAIN]['p_max'] > e['act_max'] for e in al)
+        summ['sentence_short'] = f"{lead}지만, {kind}를 낸 공연일 {ndays(len(al))} 실측이 혼잡 기준에 못 미" + ('쳐 정점을 높게 봤습니다.' if high else '쳤습니다.')
+    elif al and nohit:
+        summ['sentence_short'] = f"{lead}고, {kind}를 낸 공연일 {ndays(len(al), topic=False)} 가운데 {ndays(len(hit), topic=False, subj=True)} 실제로 혼잡 기준을 넘었습니다."
+    elif al:
+        summ['sentence_short'] = f"{lead}고, {kind}를 낸 공연일 {ndays(len(al), topic=False)}이 모두 실제로 혼잡 기준을 넘었습니다."
+    else:
+        summ['sentence_short'] = f"{lead}습니다."
+    if miss:
+        summ['sentence_short'] += f" 알림 없이 혼잡했던 날은 {and_days([e['d'] for e in miss])}입니다." if len(miss) <= 2 else f" 알림 없이 혼잡했던 날이 {len(miss)}일 있습니다."
     summ['scored_through'] = d1
 json.dump(rows, open(D + 'live_prereg.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 json.dump(summ, open(D + 'live_prereg_summary.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
